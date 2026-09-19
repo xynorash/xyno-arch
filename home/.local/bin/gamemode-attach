@@ -8,6 +8,13 @@
 # wait for the game to exit and then clean it up.
 pid="$1"
 [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null || exit 0
+
+# Launched through gamemoderun, the game registers itself (libgamemodeauto is
+# preloaded into it). Calling -r on it would toggle GameMode back off, so leave
+# it alone. MangoHud loads plain libgamemode only to query status, so matching
+# the "auto" library is specific to self-registration.
+sleep 2
+grep -q libgamemodeauto "/proc/$pid/maps" 2>/dev/null && exit 0
 lock="${XDG_RUNTIME_DIR:-/tmp}/gamemode-attach.$pid"
 mkdir "$lock" 2>/dev/null || exit 0
 
