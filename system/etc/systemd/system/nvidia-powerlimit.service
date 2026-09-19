@@ -1,0 +1,15 @@
+[Unit]
+Description=Raise GTX 980 power limit to its 225 W maximum
+After=multi-user.target
+ConditionPathExists=/usr/bin/nvidia-smi
+
+[Service]
+Type=oneshot
+# Default is 180 W; the board allows up to 225 W. More headroom lets the GPU
+# hold its boost clock under sustained game load instead of power-throttling.
+ExecStart=/usr/bin/nvidia-smi -pm 1
+ExecStart=/usr/bin/nvidia-smi -pl 225
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

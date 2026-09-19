@@ -1,0 +1,14 @@
+# sched_ext scheduler loaded at boot by scx_loader.service.
+# scx_lavd = Latency-criticality Aware Virtual Deadline, written by Igalia
+# for Valve's Steam Deck. It spots latency-critical threads (a game's render
+# and input threads) and keeps them from being starved by background load.
+default_sched = "scx_lavd"
+default_mode  = "Gaming"
+
+[scheds.scx_lavd]
+# Desktop on mains power: no core compaction, use every core.
+gaming_mode     = ["--performance"]
+auto_mode       = ["--autopilot"]
+lowlatency_mode = ["--performance"]
+powersave_mode  = ["--powersave"]
+server_mode     = ["--balanced"]

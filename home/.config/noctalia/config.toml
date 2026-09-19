@@ -1,0 +1,139 @@
+# Omarchy Quattro-inspired look, translated to noctalia + niri.
+# Hand-written layer. GUI changes land in ~/.local/state/noctalia/settings.toml
+# and override anything here.
+
+[shell]
+# Quattro leans rounded across bar, menus, notifications and lock screen.
+corner_radius_scale = 1.4
+font_family = "JetBrainsMono Nerd Font"
+polkit_agent = true
+# Outline the section cards inside panels.
+card_borders = true
+
+[theme]
+mode    = "dark"
+source  = "builtin"
+builtin = "Tokyo-Night"
+
+[theme.templates]
+enable_builtin_templates = true
+# One palette pushed into everything — the Quattro "theme applies everywhere" idea.
+# qt/kcolorscheme omitted: no Qt applications installed on this system.
+builtin_ids = [ "hyprland", "ghostty", "gtk3", "gtk4" ]
+enable_community_templates = true
+# yazi is the file manager here; keep it on the same palette as everything else.
+community_ids = [ "yazi" ]
+
+[accessibility]
+# 1x content scale — matches the pinned 1.0 Wayland output scale.
+ui_scale = 1.0
+
+# ── Bar: modelled on Omarchy Quattro's documented layout ──────────────────
+#   left   = menu launcher, spacer, workspaces
+#   center = media, clock
+#   right  = tray, network, audio, display, power
+# Widgets Omarchy carries that this box can't use are omitted:
+#   bluetooth (bluez not installed), display/brightness (no backlight on the
+#   Dell E2314H), battery (desktop), keyboard_layout (single layout),
+#   weather (needs location setup), agents/system-update (no equivalent).
+[bar.default]
+position   = "top"
+thickness  = 32
+scale      = 1.0
+font_scale = 0.8
+# Quattro ships the bar opaque; transparency is a deliberate toggle, not the default.
+background_opacity = 0.96
+
+start  = [ "launcher", "spacer", "workspaces" ]
+center = [ "media", "clock" ]
+end    = [ "tray", "custom_button", "keyboard_layout", "volume", "control-center", "session" ]
+
+# ── Widget styling ───────────────────────────────────────────────────────
+# Omarchy is restrained: plain icons and text, with the active workspace as
+# the one emphasised element. No capsule on the clock.
+[widget.spacer]
+length = 12
+
+[widget.workspaces]
+# No background pill — indicators sit bare on the bar.
+capsule = false
+
+[widget.clock]
+capsule     = false
+font_weight = 500
+
+[widget.media]
+capsule = false
+
+[widget.launcher]
+color = "primary"
+
+[widget.session]
+color = "error"
+
+[widget.custom_button]
+glyph   = "ethernet"
+tooltip = "Wired — enp34s0"
+
+# Modern gesture form; a bare `command` key is the deprecated spelling and
+# raises a "Legacy setting" banner in Settings.
+[widget.custom_button.actions]
+left = "noctalia msg panel-toggle control-center"
+
+# ─── Control Center ──────────────────────────────────────────────────────
+[control_center]
+width                = 700
+sidebar              = "compact"
+show_shortcut_labels = true
+show_session_button  = true
+# This box has no wireless adapter and bluez is not installed, so those
+# tabs only ever showed a "?" or a crossed-out icon.
+# No battery or AC device in /sys/class/power_supply and UPower is not
+# installed, so the battery section can never show anything.
+hidden_tabs = [ "network", "bluetooth", "power" ]
+
+# Toggle tiles. wifi/bluetooth dropped for the same reason; replaced with
+# things that actually do something here.
+[[control_center.shortcuts]]
+type = "audio"
+
+[[control_center.shortcuts]]
+type = "mic_mute"
+
+[[control_center.shortcuts]]
+type = "caffeine"
+
+[[control_center.shortcuts]]
+type = "nightlight"
+
+[[control_center.shortcuts]]
+type = "notification"
+
+[[control_center.shortcuts]]
+type = "clipboard"
+
+[[control_center.shortcuts]]
+type = "wallpaper"
+
+[[control_center.shortcuts]]
+type = "session"
+
+
+# ─── Location ────────────────────────────────────────────────────────────
+# Derived from the system timezone (Indian/Antananarivo) so the clock card
+# stops reading "No location set". Change if that's not where you are.
+[location]
+latitude  = -18.8792
+longitude = 47.5079
+
+# ─── Panels ──────────────────────────────────────────────────────────────
+# "glass" made the Control Center melt into whatever was behind it. Solid
+# plus an outline and a drop shadow reads as its own surface.
+[shell.panel]
+transparency_mode = "solid"
+borders           = true
+shadow            = true
+floating_offset   = 10
+# Attached panels are borderless by design, so the Control Center floats:
+# that is what lets the outline and shadow actually draw around it.
+control_center_placement = "floating"

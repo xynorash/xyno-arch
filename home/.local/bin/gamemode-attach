@@ -1,0 +1,18 @@
+#!/bin/sh
+# Put an already-running process (a game window's PID) into GameMode.
+# Called by Hyprland when a Steam game window opens — see hyprland.lua.
+#
+# `gamemoded -r PID` toggles, so a game that opens two windows from one
+# process would switch itself back off. An atomic mkdir lock per PID
+# makes a second call a no-op. The -r helper also blocks forever, so we
+# wait for the game to exit and then clean it up.
+pid="$1"
+[ -n "$pid" ] && kill -0 "$pid" 2>/dev/null || exit 0
+lock="${XDG_RUNTIME_DIR:-/tmp}/gamemode-attach.$pid"
+mkdir "$lock" 2>/dev/null || exit 0
+
+gamemoded -r "$pid" >/dev/null 2>&1 &
+req=$!
+while kill -0 "$pid" 2>/dev/null; do sleep 5; done
+kill "$req" 2>/dev/null
+rmdir "$lock" 2>/dev/null

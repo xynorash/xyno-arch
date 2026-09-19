@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+"""Local vs international download speed, using Netflix's fast.com servers.
+Run it on any Linux (e.g. an Omarchy live USB) at the same hour to compare.
+Pause Steam first, or its traffic will share the line with the test."""
+import json, re, subprocess, time, urllib.request
+
+def get(url):
+    return urllib.request.urlopen(url, timeout=15).read().decode()
+
+js = re.search(r'app-[a-z0-9]+\.js', get("https://fast.com")).group(0)
+token = re.search(r'token:"([A-Za-z0-9]+)"', get(f"https://fast.com/{js}")).group(1)
+targets = json.loads(get(f"https://api.fast.com/netflix/speedtest/v2?https=true&token={token}&urlCount=5"))["targets"]
+
+print(f"{'server':34} {'speed':>10}")
+for t in targets:
+    url = t["url"].replace("/speedtest?", "/speedtest/range/0-52428800?")
+    procs = [subprocess.Popen(["curl", "-s", "-o", "/dev/null", "--max-time", "15",
+                               "-w", "%{size_download}", url], stdout=subprocess.PIPE) for _ in range(4)]
+    t0 = time.time()
+    got = sum(int(p.communicate()[0] or 0) for p in procs)
+    loc = f'{t["location"]["city"].title()}, {t["location"]["country"]}'
+    print(f"{loc:34} {got * 8 / (time.time() - t0) / 1e6:7.1f} Mbps")

@@ -1,0 +1,1 @@
+root=PARTUUID=49a7c1a3-ff9d-4bbf-b68f-ab105487c35f zswap.enabled=0 rootflags=subvol=@ rw rootfstype=btrfs

@@ -1,0 +1,6 @@
+# Written by noctalia's theme templates, not by hand
+home/.config/hypr/noctalia.lua
+home/.config/noctalia/settings.toml
+home/.config/yazi/
+*.bak
+*.bak-*
