@@ -43,6 +43,11 @@ scale      = 1.0
 font_scale = 0.8
 # Quattro ships the bar opaque; transparency is a deliberate toggle, not the default.
 background_opacity = 0.96
+# Rounded, slightly floating bar.
+radius               = 14
+radius_top_left      = 14
+margin_ends          = 10
+concave_edge_corners = false
 
 start  = [ "launcher", "spacer", "workspaces" ]
 center = [ "media", "clock" ]
@@ -137,3 +142,13 @@ floating_offset   = 10
 # Attached panels are borderless by design, so the Control Center floats:
 # that is what lets the outline and shadow actually draw around it.
 control_center_placement = "floating"
+
+# ─── Wallpaper ───────────────────────────────────────────────────────────
+[wallpaper.default]
+path = "/home/xynorash/Pictures/Wallpapers/starry-night-tokyo.png"
+
+# ─── Lock screen ─────────────────────────────────────────────────────────
+# Widgets on (clock, media, session buttons). Their on-screen positions are
+# per-monitor and stay in noctalia's own state file.
+[lockscreen_widgets]
+enabled = true

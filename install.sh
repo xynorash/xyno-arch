@@ -51,8 +51,26 @@ if (( system )); then
   sudo sysctl --system >/dev/null
   sudo systemctl daemon-reload
   sudo systemctl enable --now scx_loader.service nvidia-powerlimit.service
+  echo "group membership"
+  for g in gamemode seat docker; do
+    getent group "$g" >/dev/null && sudo usermod -aG "$g" "$USER" && echo "  $USER -> $g"
+  done
+
+  echo "hostname in /etc/hosts"
+  if ! grep -q '127.0.1.1' /etc/hosts; then
+    sudo sed -i "/^127.0.0.1[[:space:]]*localhost/a 127.0.1.1        $(hostname).localdomain    $(hostname)" /etc/hosts
+    echo "  added 127.0.1.1 $(hostname)"
+  fi
+
+  echo "services this setup does not want running"
+  for u in cockpit.socket systemd-networkd-wait-online.service; do
+    systemctl is-enabled "$u" &>/dev/null && sudo systemctl disable --now "$u" && echo "  disabled $u"
+  done
+
   echo
   echo "not installed automatically, they replace files the system owns:"
+  echo "  system/etc/pam.d/greetd        adds gnome-keyring unlock at login"
+  echo "  system/etc/mkinitcpio.d/linux.preset  builds the fallback UKI as well"
   echo "  system/etc/mkinitcpio.conf     nvidia modules in MODULES, kms hook removed"
   echo "  system/etc/kernel/cmdline      kernel command line baked into the UKI"
   echo "  system/boot/loader/loader.conf systemd-boot (editor disabled, default pinned)"

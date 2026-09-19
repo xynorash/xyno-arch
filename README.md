@@ -38,7 +38,7 @@ Package lists live in `packages/` (`pacman.txt`, `aur.txt`).
 ```
 home/       dotfiles, symlinked into $HOME
 system/     /etc and /boot files, copied by --system
-wallpapers/ generated wallpaper
+wallpapers/ generated wallpaper (referenced by config.toml)
 tools/      wallpaper generator
 packages/   explicit pacman and AUR package lists
 ```
@@ -84,7 +84,11 @@ straight out of `hyprland.lua`, so it can't go stale.
 - `hyprland.lua` uses the Lua config format. hyprlang (`hyprland.conf`) is
   deprecated as of Hyprland 0.55.
 - noctalia writes `noctalia.lua`, `settings.toml` and the Yazi theme itself;
-  those are gitignored so generated files don't fight the repo.
+  those are gitignored so generated files don't fight the repo. Everything that
+  defines the look — palette, bar geometry, wallpaper, lock screen, widgets —
+  lives in the tracked `config.toml`, which overrides nothing and is overridden
+  by the state file only if you change the same setting through the GUI. What
+  stays untracked is per-monitor widget placement.
 - `system/etc/mkinitcpio.conf`, `system/etc/kernel/cmdline` and
   `system/boot/loader/loader.conf` are **not** installed automatically. They
   replace files tied to the boot setup — diff them first, then run
