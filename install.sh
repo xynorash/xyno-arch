@@ -44,12 +44,14 @@ if (( system )); then
              etc/modules-load.d/ntsync.conf \
              etc/scx_loader.toml \
              etc/greetd/config.toml \
-             etc/systemd/system/nvidia-powerlimit.service; do
+             etc/systemd/system/nvidia-powerlimit.service \
+             etc/systemd/logind.conf.d/10-power-key.conf; do
     sudo install -Dm644 "$repo/system/$rel" "/$rel"
     echo "  /$rel"
   done
   sudo sysctl --system >/dev/null
   sudo systemctl daemon-reload
+  sudo systemctl reload systemd-logind
   sudo systemctl enable --now scx_loader.service nvidia-powerlimit.service
   echo "group membership"
   for g in gamemode seat docker; do

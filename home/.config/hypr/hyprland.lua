@@ -107,6 +107,9 @@ hl.bind(mod .. " + ALT + J", hl.dsp.exec_cmd("jetbrains-toolbox"))
 hl.bind(mod .. " + Q", hl.dsp.window.close())
 hl.bind(mod .. " + SHIFT + E", hl.dsp.exit())
 hl.bind(mod .. " + ALT + L", hl.dsp.exec_cmd("noctalia msg session lock"))
+-- Physical power button opens the session menu (same as the bar's power icon)
+-- rather than powering off. logind is set to ignore the key so this wins.
+hl.bind("XF86PowerOff", hl.dsp.exec_cmd("noctalia msg panel-toggle session"), { locked = true })
 
 -- Help
 -- SUPER+? prints this config's binds in a floating terminal.
