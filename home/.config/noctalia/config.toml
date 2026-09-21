@@ -51,7 +51,7 @@ concave_edge_corners = false
 
 start  = [ "launcher", "spacer", "workspaces" ]
 center = [ "media", "clock" ]
-end    = [ "tray", "custom_button", "keyboard_layout", "volume", "control-center", "session" ]
+end    = [ "tray", "sysmon_cpu", "sysmon_ram", "sysmon_gpu", "custom_button", "keyboard_layout", "volume", "control-center", "session" ]
 
 # ── Widget styling ───────────────────────────────────────────────────────
 # Omarchy is restrained: plain icons and text, with the active workspace as
@@ -84,6 +84,35 @@ tooltip = "Wired — enp34s0"
 # raises a "Legacy setting" banner in Settings.
 [widget.custom_button.actions]
 left = "noctalia msg panel-toggle control-center"
+
+# System resources. One sysmon widget shows one stat, hence three named
+# instances; each click opens the Control Center on its System tab.
+[widget.sysmon_cpu]
+type          = "sysmon"
+stat          = "cpu_usage"
+visualization = "none"
+capsule       = false
+
+[widget.sysmon_cpu.actions]
+left = "noctalia msg panel-toggle control-center system"
+
+[widget.sysmon_ram]
+type          = "sysmon"
+stat          = "ram_pct"
+visualization = "none"
+capsule       = false
+
+[widget.sysmon_ram.actions]
+left = "noctalia msg panel-toggle control-center system"
+
+[widget.sysmon_gpu]
+type          = "sysmon"
+stat          = "gpu_usage"
+visualization = "none"
+capsule       = false
+
+[widget.sysmon_gpu.actions]
+left = "noctalia msg panel-toggle control-center system"
 
 # ─── Control Center ──────────────────────────────────────────────────────
 [control_center]
