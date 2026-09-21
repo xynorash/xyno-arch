@@ -89,6 +89,7 @@ capsule       = false
 
 [widget.sysmon_net.actions]
 left = "noctalia msg panel-toggle control-center system"
+right = "noctalia msg panel-toggle control-center system"
 
 # System resources. One sysmon widget shows one stat, hence three named
 # instances; each click opens the Control Center on its System tab.
@@ -100,6 +101,7 @@ capsule       = false
 
 [widget.sysmon_cpu.actions]
 left = "noctalia msg panel-toggle control-center system"
+right = "noctalia msg panel-toggle control-center system"
 
 [widget.sysmon_ram]
 type          = "sysmon"
@@ -109,6 +111,7 @@ capsule       = false
 
 [widget.sysmon_ram.actions]
 left = "noctalia msg panel-toggle control-center system"
+right = "noctalia msg panel-toggle control-center system"
 
 [widget.sysmon_gpu]
 type          = "sysmon"
@@ -118,10 +121,12 @@ capsule       = false
 
 [widget.sysmon_gpu.actions]
 left = "noctalia msg panel-toggle control-center system"
+right = "noctalia msg panel-toggle control-center system"
 
-# Left click mutes instead of opening the audio menu.
+# Left click mutes; right click opens the Audio tab.
 [widget.volume.actions]
 left = "noctalia msg volume-mute"
+right = "noctalia msg panel-toggle control-center audio"
 
 # Microphone level, next to the output volume.
 [widget.volume_input]
@@ -130,6 +135,7 @@ device = "input"
 
 [widget.volume_input.actions]
 left = "noctalia msg mic-mute"
+right = "noctalia msg panel-toggle control-center audio"
 
 # ─── Control Center ──────────────────────────────────────────────────────
 [control_center]
