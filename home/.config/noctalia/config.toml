@@ -70,6 +70,12 @@ font_weight = 500
 [widget.media]
 capsule = false
 
+# Click plays/pauses; scroll up for the previous track, down for the next.
+[widget.media.actions]
+left        = "media toggle"
+scroll_up   = "media previous"
+scroll_down = "media next"
+
 [widget.launcher]
 color = "primary"
 
