@@ -31,6 +31,9 @@ hl.env("_JAVA_AWT_WM_NONREPARENTING", "1")
 -- ─── Autostart ───────────────────────────────────────────────────────────
 hl.on("hyprland.start", function()
     hl.exec_cmd("noctalia")
+    -- Notification clicks land on the sending app even if it ignores the
+    -- activation token.
+    hl.exec_cmd("/home/xynorash/.local/bin/notification-focus")
 end)
 
 -- ─── Layout & look ───────────────────────────────────────────────────────
@@ -74,6 +77,9 @@ hl.config({
         disable_hyprland_logo    = true,
         disable_splash_rendering = true,
         force_default_wallpaper  = 0,
+        -- Clicking a notification (toast or Control Center) hands the app an
+        -- activation token; honour it so Hyprland jumps to that window.
+        focus_on_activate        = true,
     },
 
     input = {

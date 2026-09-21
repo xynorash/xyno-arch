@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Clicking a notification (toast or Control Center) should land on the app
+# that sent it. noctalia passes an activation token and Hyprland honours it
+# (misc.focus_on_activate), but not every app uses the token. For those,
+# watch the click (ActionInvoked), look up the sender in noctalia's history
+# and focus its window, which also switches to its workspace.
+
+history="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/notification_history.json"
+
+focus_sender() {
+    local id=$1 entry
+    entry=$(jq -r --argjson id "$id" '
+        .entries[].notification | select(.id == $id)
+        | (.desktop_entry // "" | if . == "" then null else . end) // .app_name // ""' "$history")
+    [ -n "$entry" ] || return
+
+    # Give the app a moment to raise itself with the token first.
+    sleep 0.4
+    local active
+    active=$(hyprctl activewindow -j | jq -r '.class // ""')
+    [ "${active,,}" = "${entry,,}" ] && return
+
+    local re
+    re=$(printf '%s' "$entry" | sed 's/[][\.*^$+?(){}|]/\\&/g')
+    hyprctl dispatch "hl.dsp.focus({ window = \"class:(?i)^(${re//\\/\\\\})\$\" })" >/dev/null
+}
+
+dbus-monitor --session "type='signal',interface='org.freedesktop.Notifications',member='ActionInvoked'" |
+while read -r line; do
+    case $line in
+        *member=ActionInvoked*)
+            read -r _ id
+            focus_sender "$id" &
+            ;;
+    esac
+done
