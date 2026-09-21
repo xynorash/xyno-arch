@@ -108,6 +108,7 @@ hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "omarchy
 -- Apps
 hl.bind(mod .. " + T", hl.dsp.exec_cmd("ghostty"))
 hl.bind(mod .. " + D", hl.dsp.exec_cmd("noctalia msg panel-toggle launcher"))
+hl.bind(mod .. " + CTRL + V", hl.dsp.exec_cmd("noctalia msg panel-toggle clipboard"))
 hl.bind(mod .. " + E", hl.dsp.exec_cmd("ghostty -e yazi"))
 hl.bind(mod .. " + ALT + J", hl.dsp.exec_cmd("jetbrains-toolbox"))
 hl.bind(mod .. " + Q", hl.dsp.window.close())
