@@ -51,7 +51,7 @@ concave_edge_corners = false
 
 start  = [ "launcher", "spacer", "workspaces" ]
 center = [ "media", "clock" ]
-end    = [ "tray", "sysmon_cpu", "sysmon_ram", "sysmon_gpu", "custom_button", "keyboard_layout", "volume", "control-center", "session" ]
+end    = [ "tray", "sysmon_cpu", "sysmon_ram", "sysmon_gpu", "sysmon_net", "keyboard_layout", "volume", "control-center", "session" ]
 
 # ── Widget styling ───────────────────────────────────────────────────────
 # Omarchy is restrained: plain icons and text, with the active workspace as
@@ -76,14 +76,19 @@ color = "primary"
 [widget.session]
 color = "error"
 
-[widget.custom_button]
-glyph   = "ethernet"
-tooltip = "Wired — enp34s0"
+[widget.sysmon_net]
+# Live download speed on the wired link, with the ethernet glyph (no Wi-Fi here).
+type          = "sysmon"
+stat          = "net_rx"
+interface     = "enp34s0"
+glyph         = "ethernet"
+# Short units (3.9k, 12M) keep the label narrow.
+network_speed_compact = true
+visualization = "none"
+capsule       = false
 
-# Modern gesture form; a bare `command` key is the deprecated spelling and
-# raises a "Legacy setting" banner in Settings.
-[widget.custom_button.actions]
-left = "noctalia msg panel-toggle control-center"
+[widget.sysmon_net.actions]
+left = "noctalia msg panel-toggle control-center system"
 
 # System resources. One sysmon widget shows one stat, hence three named
 # instances; each click opens the Control Center on its System tab.
