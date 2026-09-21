@@ -51,7 +51,7 @@ concave_edge_corners = false
 
 start  = [ "launcher", "spacer", "workspaces" ]
 center = [ "media", "clock" ]
-end    = [ "tray", "sysmon_cpu", "sysmon_ram", "sysmon_gpu", "sysmon_net", "keyboard_layout", "volume", "control-center", "session" ]
+end    = [ "tray", "sysmon_cpu", "sysmon_ram", "sysmon_gpu", "sysmon_net", "keyboard_layout", "volume", "volume_input", "control-center", "session" ]
 
 # ── Widget styling ───────────────────────────────────────────────────────
 # Omarchy is restrained: plain icons and text, with the active workspace as
@@ -118,6 +118,11 @@ capsule       = false
 
 [widget.sysmon_gpu.actions]
 left = "noctalia msg panel-toggle control-center system"
+
+# Microphone level, next to the output volume.
+[widget.volume_input]
+type   = "volume"
+device = "input"
 
 # ─── Control Center ──────────────────────────────────────────────────────
 [control_center]
