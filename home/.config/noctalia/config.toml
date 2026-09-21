@@ -119,10 +119,17 @@ capsule       = false
 [widget.sysmon_gpu.actions]
 left = "noctalia msg panel-toggle control-center system"
 
+# Left click mutes instead of opening the audio menu.
+[widget.volume.actions]
+left = "noctalia msg volume-mute"
+
 # Microphone level, next to the output volume.
 [widget.volume_input]
 type   = "volume"
 device = "input"
+
+[widget.volume_input.actions]
+left = "noctalia msg mic-mute"
 
 # ─── Control Center ──────────────────────────────────────────────────────
 [control_center]
