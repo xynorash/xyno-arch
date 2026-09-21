@@ -70,9 +70,11 @@ font_weight = 500
 [widget.media]
 capsule = false
 
-# Click plays/pauses; scroll up for the previous track, down for the next.
+# Click plays/pauses; right click opens the Media tab; scroll up for the
+# previous track, down for the next.
 [widget.media.actions]
 left        = "media toggle"
+right       = "panel-toggle control-center media"
 scroll_up   = "media previous"
 scroll_down = "media next"
 
