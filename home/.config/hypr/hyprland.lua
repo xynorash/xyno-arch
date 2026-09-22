@@ -144,6 +144,7 @@ hl.bind(mod .. " + CTRL + L", hl.dsp.window.move({ direction = "right" }))
 
 -- Window state
 hl.bind(mod .. " + V", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(mod .. " + F", hl.dsp.window.fullscreen({ mode = "maximized" }))
 hl.bind(mod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mod .. " + S", hl.dsp.layout("togglesplit"))
 
