@@ -26,6 +26,8 @@ hl.env("CLUTTER_BACKEND", "wayland")
 hl.env("MOZ_ENABLE_WAYLAND", "1")
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "wayland")
 hl.env("_JAVA_AWT_WM_NONREPARENTING", "1")
+hl.env("XCURSOR_THEME", "DotClick")
+hl.env("XCURSOR_SIZE", "32")
 -- SDL_VIDEODRIVER deliberately unset — forcing it breaks Steam titles.
 
 -- ─── Autostart ───────────────────────────────────────────────────────────
@@ -214,5 +216,28 @@ hl.window_rule({
     size   = "900 820",
     center = true,
 })
+
+-- WinApps: FreeRDP RemoteApp windows (xfreerdp3 under XWayland). Every window
+-- of an app shares the class "Microsoft <App>" (set by /wm-class) and its
+-- class and title arrive after the window maps, so static window rules never
+-- match; these hooks run on every class/title change instead.
+--  * float: tiling resizes the X window while the server is still repainting,
+--    so frame and content disagree and the app stalls. A floating window is
+--    resized once, when you release the drag.
+--  * the VM's TimeSync.ps1 helper runs in a visible PowerShell window; park it
+--    on a hidden special workspace instead of letting it cover the screen.
+local function tame_winapps(w)
+    if not (w and w.class and w.class:match("^Microsoft ")) then return end
+    if w.title:match("^Administrator: .*powershell%.exe$") then
+        if not (w.workspace and w.workspace.name == "special:winapps") then
+            hl.dispatch(hl.dsp.window.move({ workspace = "special:winapps", follow = false, window = w }))
+        end
+    elseif not w.floating then
+        hl.dispatch(hl.dsp.window.float({ action = "enable", window = w }))
+    end
+end
+hl.on("window.open",  tame_winapps)
+hl.on("window.class", tame_winapps)
+hl.on("window.title", tame_winapps)
 
 require("noctalia").apply_theme()
