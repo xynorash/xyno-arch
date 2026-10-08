@@ -45,7 +45,8 @@ if (( system )); then
              etc/scx_loader.toml \
              etc/greetd/config.toml \
              etc/systemd/system/nvidia-powerlimit.service \
-             etc/systemd/logind.conf.d/10-power-key.conf; do
+             etc/systemd/logind.conf.d/10-power-key.conf \
+             etc/systemd/resolved.conf.d/10-no-llmnr.conf; do
     sudo install -Dm644 "$repo/system/$rel" "/$rel"
     echo "  /$rel"
   done
