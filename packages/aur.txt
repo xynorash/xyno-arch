@@ -1,9 +1,16 @@
+anydesk-bin
+blesh-git
+carapace-bin
+cpak-bin
 google-chrome
 jetbrains-toolbox
 lib32-nvidia-580xx-utils
 nvidia-580xx-dkms
 nvidia-580xx-utils
+oh-my-posh-bin
 opencl-nvidia-580xx
+rustdesk
 spotify
+win2xcur
 yay
-yay-debug
+proton-authenticator-bin
