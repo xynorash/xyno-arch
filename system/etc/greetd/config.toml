@@ -1,8 +1,0 @@
-[terminal]
-vt = 1
-
-# Graphical greeter (ReGreet in Cage, README-matching theme). The wrapper falls back to the
-# previous tuigreet automatically if the graphical greeter fails to start.
-[default_session]
-command = "/usr/local/bin/xyno-greeter"
-user = "greeter"

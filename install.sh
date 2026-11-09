@@ -2,7 +2,7 @@
 # xyno-arch installer.
 #
 #   ./install.sh            symlink the home configs
-#   ./install.sh --system   also install /etc + /boot files (needs sudo)
+#   ./install.sh --system   also install the /etc files and enable services (needs sudo)
 #   ./install.sh --packages install packages/pacman.txt (+ aur.txt via yay)
 #                           first; combine with --system, e.g. --packages --system
 #
@@ -72,57 +72,40 @@ cp -n "$repo/wallpapers/"*.png "$HOME/Pictures/Wallpapers/" 2>/dev/null || true
 
 if (( system )); then
   echo "installing system files (sudo)"
-  for rel in etc/sysctl.d/99-zram.conf \
-             etc/systemd/zram-generator.conf \
-             etc/sysctl.d/99-network-tuning.conf \
-             etc/security/limits.d/99-realtime-audio.conf \
-             etc/modules-load.d/ntsync.conf \
-             etc/scx_loader.toml \
-             etc/greetd/config.toml \
-             etc/greetd/regreet.toml \
-             etc/greetd/regreet.css \
-             usr/share/backgrounds/xynorash-edge.png \
-             etc/default/earlyoom \
-             etc/systemd/system/nvidia-powerlimit.service \
-             etc/systemd/logind.conf.d/10-power-key.conf \
-             etc/systemd/resolved.conf.d/10-no-llmnr.conf \
-             etc/systemd/network/20-ethernet.network \
-             etc/systemd/network/20-wlan.network \
-             etc/systemd/network/20-wwan.network \
-             etc/tmpfiles.d/10-thp-madvise.conf; do
+  files=(etc/sysctl.d/99-zram.conf
+         etc/systemd/zram-generator.conf
+         etc/sysctl.d/99-network-tuning.conf
+         etc/security/limits.d/99-realtime-audio.conf
+         etc/modules-load.d/ntsync.conf
+         etc/modules-load.d/nct6775.conf
+         etc/default/earlyoom
+         etc/systemd/logind.conf.d/10-power-key.conf
+         etc/systemd/network/20-ethernet.network
+         etc/tmpfiles.d/10-thp-madvise.conf
+         etc/pacman.d/hooks/limine-update.hook)
+  # the power-limit unit only makes sense with an NVIDIA GPU (it fails, and would stop this script, without one)
+  nvidia=0
+  if command -v nvidia-smi &>/dev/null && lspci 2>/dev/null | grep -qi 'vga.*nvidia\|3d.*nvidia'; then
+    nvidia=1
+    files+=(etc/systemd/system/nvidia-powerlimit.service)
+  fi
+  for rel in "${files[@]}"; do
     sudo install -Dm644 "$repo/system/$rel" "/$rel"
     echo "  /$rel"
   done
-  # graphical greeter: ReGreet in Cage via a wrapper that falls back to tuigreet if it can't start
-  sudo install -Dm755 "$repo/system/usr/local/bin/xyno-greeter" /usr/local/bin/xyno-greeter
-  sudo usermod -aG seat greeter
-  sudo install -d -o greeter -g greeter -m755 /var/lib/regreet
-  [[ -e /var/lib/regreet/state.toml ]] || printf 'last_user = "xynorash"\n\n[user_to_last_sess]\nxynorash = "Hyprland"\n' | sudo -u greeter tee /var/lib/regreet/state.toml >/dev/null
   sudo sysctl --system >/dev/null
   sudo systemd-tmpfiles --create /etc/tmpfiles.d/10-thp-madvise.conf
   sudo systemctl daemon-reload
   sudo systemctl reload systemd-logind
-  sudo systemctl enable --now scx_loader.service nvidia-powerlimit.service earlyoom.service
+  sudo systemctl enable --now earlyoom.service
+  if (( nvidia )); then sudo systemctl enable --now nvidia-powerlimit.service; fi
   echo "base services"
-  sudo systemctl enable seatd.service greetd.service docker.service tailscaled.service \
-       systemd-networkd.service systemd-resolved.service systemd-timesyncd.service \
-       snapper-timeline.timer snapper-cleanup.timer
+  sudo systemctl enable tailscaled.service \
+       systemd-networkd.service systemd-resolved.service systemd-timesyncd.service
   sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
-  echo "snapper (1 hourly / 1 daily / 1 monthly, so snapshots cannot fill the disk)"
-  if ! sudo snapper list-configs 2>/dev/null | grep -q '^root '; then
-    sudo snapper -c root create-config /
-  fi
-  if findmnt -n /home >/dev/null && ! sudo snapper list-configs 2>/dev/null | grep -q '^home '; then
-    sudo snapper -c home create-config /home
-  fi
-  for c in root home; do
-    sudo snapper -c "$c" set-config TIMELINE_LIMIT_HOURLY=1 TIMELINE_LIMIT_DAILY=1 \
-         TIMELINE_LIMIT_WEEKLY=0 TIMELINE_LIMIT_MONTHLY=1 TIMELINE_LIMIT_QUARTERLY=0 \
-         TIMELINE_LIMIT_YEARLY=0 NUMBER_LIMIT=10 NUMBER_LIMIT_IMPORTANT=5 2>/dev/null || true
-  done
   echo "group membership"
-  for g in gamemode seat docker; do
+  for g in gamemode docker uucp video render kvm input; do
     getent group "$g" >/dev/null && sudo usermod -aG "$g" "$USER" && echo "  $USER -> $g"
   done
 
@@ -133,18 +116,20 @@ if (( system )); then
   fi
 
   echo "services this setup does not want running"
-  for u in cockpit.socket systemd-networkd-wait-online.service; do
-    systemctl is-enabled "$u" &>/dev/null && sudo systemctl disable --now "$u" && echo "  disabled $u"
-  done
+  if systemctl is-enabled systemd-networkd-wait-online.service &>/dev/null; then
+    sudo systemctl disable --now systemd-networkd-wait-online.service && echo "  disabled systemd-networkd-wait-online.service"
+  fi
 
   echo
-  echo "not installed automatically, they replace files the system owns:"
-  echo "  system/etc/pam.d/greetd        adds gnome-keyring unlock at login"
-  echo "  system/etc/mkinitcpio.d/linux.preset  builds the fallback UKI as well"
-  echo "  system/etc/mkinitcpio.conf     nvidia modules in MODULES, kms hook removed"
-  echo "  system/etc/kernel/cmdline      kernel command line baked into the UKI"
-  echo "  system/boot/loader/loader.conf systemd-boot (editor disabled, default pinned)"
-  echo "compare them by hand, then run: sudo mkinitcpio -P"
+  echo "not installed automatically, they are tied to the boot setup of one machine:"
+  echo "  system/etc/mkinitcpio.conf                          nvidia modules in MODULES, kms hook removed"
+  echo "  system/etc/mkinitcpio.d/linux-cachyos-bore.preset   builds the CachyOS kernel's boot image (UKI)"
+  echo "  system/boot/loader/loader.conf                      systemd-boot, default = cachyos-bore.efi, editor off"
+  echo "  /etc/kernel/cmdline is not in the repo: it holds your root PARTUUID (blkid), e.g."
+  echo "    root=PARTUUID=<yours> zswap.enabled=0 rootflags=subvol=@ rw rootfstype=btrfs"
+  echo "compare them by hand, then run: sudo mkinitcpio -p linux-cachyos-bore"
+  echo
+  echo "login screen: noctalia-greeter comes from packages/pacman.txt; set it up by hand (README, \"Login\")"
 fi
 
 echo
