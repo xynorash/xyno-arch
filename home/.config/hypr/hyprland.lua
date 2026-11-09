@@ -24,6 +24,10 @@ hl.env("_JAVA_AWT_WM_NONREPARENTING", "1")
 hl.env("GTK_USE_PORTAL", "1")
 hl.env("XCURSOR_THEME", "DotClick")
 hl.env("XCURSOR_SIZE", "32")
+-- NVIDIA prunes its shader cache past a size limit, so DXVK/VKD3D games recompile shaders and stutter.
+-- Raise the limit and skip the cleanup for the whole session so Steam and every game inherit it.
+hl.env("__GL_SHADER_DISK_CACHE_SIZE", "12000000000")
+hl.env("__GL_SHADER_DISK_CACHE_SKIP_CLEANUP", "1")
 -- SDL_VIDEODRIVER deliberately unset — forcing it breaks Steam titles.
 
 -- ─── Autostart ───────────────────────────────────────────────────────────

@@ -123,6 +123,10 @@ straight out of `hyprland.lua`, so it can't go stale.
 - **MangoHud** with VRAM on screen (`Right Shift + F12`); the 4 GB card makes
   VRAM the number worth watching.
 - **NTSYNC** module loaded for Wine builds that can use it.
+- **Shader cache:** `__GL_SHADER_DISK_CACHE_SIZE` raised to 12 GB and cleanup skipped, set for the whole
+  session in `hyprland.lua` (the NVIDIA driver otherwise prunes it and DXVK/VKD3D games recompile shaders).
+- **Proton:** `proton-cachyos-slr` from the CachyOS repo (NTSYNC support); pick it per game or as the default
+  under Steam's Settings, Compatibility. Steam's download tuning is in `home/.local/share/Steam/steam_dev.cfg`.
 
 ## Notes
 

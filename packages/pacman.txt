@@ -94,6 +94,7 @@ pipewire-pulse
 poppler
 poppler-glib
 probe-rs
+proton-cachyos-slr
 python-build
 python-installer
 python-pillow
