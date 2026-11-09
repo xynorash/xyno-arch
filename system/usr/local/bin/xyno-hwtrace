@@ -1,0 +1,143 @@
+#!/usr/bin/env python3
+"""xyno-hwtrace: black-box flight recorder.
+
+Appends one CSV row every few seconds with temperatures, fan speeds, every voltage rail the
+motherboard sensor exposes, GPU power/clock/temperature, load, memory and pressure, plus the
+keyboard-chatter counters from xyno-kbd-guard. Each row is fsync'ed, so after a hard reset or
+power loss the last rows show what the machine looked like just before it died.
+
+Log: /var/log/hwtrace/trace.csv (rotated at 32 MB, 3 files kept).
+Read the last minute before a crash:   tail -n 15 /var/log/hwtrace/trace.csv
+"""
+import glob
+import json
+import os
+import subprocess
+import sys
+import threading
+import time
+
+LOG_DIR = "/var/log/hwtrace"
+LOG = LOG_DIR + "/trace.csv"
+MAX_BYTES = 32 * 1024 * 1024
+KEEP = 3
+INTERVAL = float(os.environ.get("HWTRACE_INTERVAL", "5"))
+GPU_FIELDS = "temperature.gpu,power.draw,clocks.gr,utilization.gpu,memory.used,fan.speed,clocks_throttle_reasons.active"
+
+
+def read(path, default=""):
+    try:
+        with open(path) as f:
+            return f.read().strip()
+    except OSError:
+        return default
+
+
+class Gpu:
+    """One long-lived `nvidia-smi -l`, so we don't fork a process every tick."""
+
+    def __init__(self):
+        self.latest = [""] * len(GPU_FIELDS.split(","))
+        try:
+            self.p = subprocess.Popen(["nvidia-smi", "--query-gpu=" + GPU_FIELDS, "--format=csv,noheader,nounits",
+                                       "-l", str(int(INTERVAL))], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+            threading.Thread(target=self._reader, daemon=True).start()
+        except OSError:
+            self.p = None
+
+    def _reader(self):
+        for line in self.p.stdout:
+            parts = [x.strip() for x in line.split(",")]
+            if len(parts) == len(self.latest):
+                self.latest = parts
+
+    def stop(self):
+        if self.p:
+            self.p.terminate()
+
+
+def hwmon_sources():
+    srcs = {}
+    for d in glob.glob("/sys/class/hwmon/hwmon*"):
+        name = read(d + "/name")
+        srcs.setdefault(name, d)
+    return srcs
+
+
+def columns(srcs):
+    cols = []
+    for name in ("k10temp", "nct6797", "nct6775", "nvme"):
+        d = srcs.get(name)
+        if not d:
+            continue
+        for kind in ("temp", "fan", "in"):
+            for f in sorted(glob.glob("%s/%s*_input" % (d, kind)), key=lambda p: int(os.path.basename(p)[len(kind):].split("_")[0])):
+                cols.append(("%s_%s" % (name, os.path.basename(f)[:-6]), f))
+    return cols
+
+
+def psi(kind):
+    for line in read("/proc/pressure/" + kind).splitlines():
+        if line.startswith("some"):
+            for tok in line.split():
+                if tok.startswith("avg10="):
+                    return tok[6:]
+    return ""
+
+
+def meminfo():
+    m = {}
+    for line in read("/proc/meminfo").splitlines():
+        k, _, v = line.partition(":")
+        m[k] = int(v.split()[0]) if v.split() else 0
+    return m
+
+
+def rotate():
+    try:
+        if os.path.getsize(LOG) < MAX_BYTES:
+            return
+    except OSError:
+        return
+    for i in range(KEEP - 1, 0, -1):
+        if os.path.exists("%s.%d" % (LOG, i)):
+            os.replace("%s.%d" % (LOG, i), "%s.%d" % (LOG, i + 1))
+    os.replace(LOG, LOG + ".1")
+
+
+def main():
+    os.makedirs(LOG_DIR, exist_ok=True)
+    srcs = hwmon_sources()
+    cols = columns(srcs)
+    gpu = Gpu()
+    header = (["time", "uptime_s", "load1", "mem_avail_mb", "swap_used_mb", "psi_cpu10", "psi_mem10", "psi_io10"]
+              + ["gpu_temp_c", "gpu_power_w", "gpu_clock_mhz", "gpu_util_pct", "gpu_vram_mb", "gpu_fan_pct", "gpu_throttle"]
+              + [c[0] for c in cols] + ["kbd_presses", "kbd_false_total", "kbd_false_last_min"])
+    while True:
+        rotate()
+        new = not os.path.exists(LOG) or os.path.getsize(LOG) == 0
+        fd = os.open(LOG, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
+        if new:
+            os.write(fd, (",".join(header) + "\n").encode())
+        mi = meminfo()
+        try:
+            kb = json.load(open("/run/xyno-kbd-guard.json"))
+        except (OSError, ValueError):
+            kb = {}
+        row = [time.strftime("%Y-%m-%dT%H:%M:%S"), read("/proc/uptime").split()[0] if read("/proc/uptime") else "",
+               read("/proc/loadavg").split()[0], str(mi.get("MemAvailable", 0) // 1024),
+               str((mi.get("SwapTotal", 0) - mi.get("SwapFree", 0)) // 1024), psi("cpu"), psi("memory"), psi("io")]
+        row += gpu.latest
+        row += [read(p) for _, p in cols]
+        row += [str(kb.get("presses_total", "")), str(kb.get("bounces_total", "")), str(kb.get("bounces_last_min", ""))]
+        os.write(fd, (",".join(row) + "\n").encode())
+        os.fsync(fd)
+        os.close(fd)
+        time.sleep(INTERVAL)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(0)

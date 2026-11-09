@@ -1,0 +1,17 @@
+[Unit]
+Description=Hardware flight recorder (temps, voltages, fans, GPU, load) - one fsync'ed row per 5 s
+After=multi-user.target
+
+[Service]
+ExecStart=/usr/local/bin/xyno-hwtrace
+Restart=always
+RestartSec=5
+Nice=10
+LogsDirectory=hwtrace
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
