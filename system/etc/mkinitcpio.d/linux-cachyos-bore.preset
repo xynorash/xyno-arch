@@ -1,0 +1,8 @@
+# mkinitcpio preset for the CachyOS bore kernel: one combined boot image (UKI), like Arch's.
+# Uses /etc/mkinitcpio.conf and the command line in /etc/kernel/cmdline.
+ALL_kver="/boot/vmlinuz-linux-cachyos-bore"
+
+PRESETS=('default')
+
+default_uki="/boot/EFI/Linux/cachyos-bore.efi"
+default_options="--splash /usr/share/systemd/bootctl/splash-arch.bmp"

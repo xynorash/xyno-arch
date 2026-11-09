@@ -1,0 +1,12 @@
+# Refresh Limine's copy on the boot partition after the limine package changes.
+# (The package installs /usr/share/limine/BOOTX64.EFI but does not copy it to the ESP.)
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = limine
+
+[Action]
+Description = Refreshing Limine on the boot partition...
+When = PostTransaction
+Exec = /usr/bin/install -Dm644 /usr/share/limine/BOOTX64.EFI /boot/EFI/limine/BOOTX64.EFI
