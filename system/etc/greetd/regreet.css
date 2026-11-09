@@ -1,0 +1,161 @@
+/* xynorash greeter — palette and motifs lifted from the profile README (tools/assets/build.py) */
+@define-color void    #05040c;
+@define-color deep    #0a071b;
+@define-color ink     #070516;
+@define-color purple  #907ad6;
+@define-color lilac   #c9b8ff;
+@define-color cyan    #2de2ff;
+@define-color magenta #e04bff;
+@define-color coral   #ff6b8b;
+
+window { background-color: @void; color: #ffffff; }
+
+/* ── login card: the README "editor window" ───────────────────────────── */
+frame:nth-child(2) {
+  min-width: 560px;
+  border-radius: 16px;
+  border: 1px solid alpha(@purple, 0.42);
+  background-color: alpha(@ink, 0.80);
+  background-image:
+    linear-gradient(90deg, @cyan, @purple 55%, @magenta),
+    radial-gradient(ellipse at 50% 0%, alpha(@purple, 0.26), transparent 70%);
+  background-size: 100% 2px, 100% 100%;
+  background-repeat: no-repeat;
+  background-position: top left, 0 0;
+  box-shadow: 0 30px 90px alpha(@void, 0.9), 0 0 70px alpha(@magenta, 0.12), inset 0 1px 0 alpha(@lilac, 0.10);
+}
+frame:nth-child(2) > border { border-color: transparent; background: none; }
+frame:nth-child(2) grid { margin: 26px 34px 16px 34px; }
+frame:nth-child(2) grid > label {
+  color: alpha(@lilac, 0.78);
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+frame:nth-child(2) grid > label:first-child {
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 5px;
+  margin-bottom: 14px;
+}
+
+/* ── fields: the editor's dark inputs, cyan on focus ──────────────────── */
+frame:nth-child(2) entry,
+frame:nth-child(2) combobox button.combo {
+  padding: 0 12px;
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid alpha(@purple, 0.40);
+  background-color: alpha(@void, 0.78);
+  background-image: none;
+  color: @lilac;
+  caret-color: @cyan;
+  box-shadow: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+frame:nth-child(2) entry:focus-within,
+frame:nth-child(2) combobox button.combo:focus,
+frame:nth-child(2) combobox button.combo:hover {
+  border-color: @cyan;
+  box-shadow: 0 0 0 3px alpha(@cyan, 0.16), 0 0 24px alpha(@cyan, 0.22);
+}
+frame:nth-child(2) cellview { color: @lilac; }
+frame:nth-child(2) entry selection { background-color: alpha(@magenta, 0.45); color: #ffffff; }
+
+/* pencil ("enter manually") buttons */
+frame:nth-child(2) button.image-button,
+frame:nth-child(2) button.flat {
+  min-width: 40px; min-height: 40px; padding: 0;
+  border-radius: 10px;
+  border: 1px solid alpha(@purple, 0.40);
+  background-color: alpha(@void, 0.78);
+  background-image: none;
+  color: @lilac;
+}
+frame:nth-child(2) button.image-button:hover { border-color: @magenta; color: #ffffff; }
+
+/* ── dropdown lists ───────────────────────────────────────────────────── */
+popover > contents {
+  background-color: @deep;
+  border: 1px solid alpha(@purple, 0.45);
+  border-radius: 12px;
+  color: @lilac;
+  box-shadow: 0 18px 50px alpha(@void, 0.9);
+}
+popover treeview.view, popover listview, popover list, popover row { background: none; background-color: transparent; color: @lilac; }
+popover treeview.view:hover { background-color: alpha(@purple, 0.26); color: #ffffff; }
+popover treeview.view:selected { background-color: alpha(@cyan, 0.20); color: #ffffff; }
+popover row, popover modelbutton { border-radius: 8px; padding: 6px 12px; }
+popover row:hover, popover modelbutton:hover { background-color: alpha(@purple, 0.26); color: #ffffff; }
+popover row:selected, popover row:selected:hover { background-color: alpha(@cyan, 0.20); color: #ffffff; }
+
+/* secondary buttons (Cancel): quiet glass */
+frame:nth-child(2) button {
+  min-height: 40px;
+  padding: 0 22px;
+  border-radius: 10px;
+  border: 1px solid alpha(@purple, 0.40);
+  background-color: alpha(@void, 0.78);
+  background-image: none;
+  color: @lilac;
+  letter-spacing: 1px;
+  text-shadow: none;
+  box-shadow: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+frame:nth-child(2) button:hover { border-color: @magenta; color: #ffffff; box-shadow: 0 0 22px alpha(@magenta, 0.22); }
+
+/* ── Login: the README neon gradient ──────────────────────────────────── */
+frame:nth-child(2) button.suggested-action {
+  min-height: 40px;
+  padding: 0 30px;
+  border: none;
+  border-radius: 10px;
+  background-image: linear-gradient(90deg, @cyan, @purple 55%, @magenta);
+  background-color: transparent;
+  color: @void;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-shadow: none;
+  box-shadow: 0 0 26px alpha(@magenta, 0.35);
+  transition: box-shadow 160ms ease, filter 160ms ease;
+}
+frame:nth-child(2) button.suggested-action:hover { filter: brightness(1.14); box-shadow: 0 0 40px alpha(@cyan, 0.5); }
+frame:nth-child(2) button.suggested-action:active { filter: brightness(0.92); }
+
+/* ── clock: the Neovim statusline tab ─────────────────────────────────── */
+frame:nth-child(3) {
+  border-radius: 0 0 14px 14px;
+  border: 1px solid alpha(@purple, 0.38);
+  border-top: none;
+  background-color: alpha(@deep, 0.92);
+  box-shadow: 0 10px 40px alpha(@void, 0.7);
+}
+frame:nth-child(3) > border { border-color: transparent; background: none; }
+frame:nth-child(3) label { color: @lilac; font-size: 13px; font-weight: 700; letter-spacing: 3px; padding: 6px 22px; }
+
+/* ── power buttons: the README contact tiles ──────────────────────────── */
+frame:nth-child(1) { background: none; border: none; box-shadow: none; }
+frame:nth-child(1) > border { border-color: transparent; background: none; }
+button.destructive-action {
+  min-height: 38px;
+  padding: 0 22px;
+  border-radius: 12px;
+  border: 1px solid alpha(@coral, 0.50);
+  background-color: alpha(@ink, 0.78);
+  background-image: none;
+  color: @coral;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: none;
+  box-shadow: none;
+  transition: box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+button.destructive-action:hover {
+  background-color: alpha(@coral, 0.14);
+  border-color: @coral;
+  box-shadow: 0 0 26px alpha(@coral, 0.35);
+}
+
+/* errors (wrong password etc.) */
+label.error, .error { color: @coral; }
