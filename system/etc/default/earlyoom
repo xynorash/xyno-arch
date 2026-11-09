@@ -1,0 +1,3 @@
+# earlyoom: userspace OOM killer. Acts only when available RAM < 10% AND free swap < 10% (defaults).
+# --avoid: game/Proton, compositor, shell, login stack. --prefer: browsers/Electron.
+EARLYOOM_ARGS="-r 3600 -n --avoid '(^|/)(wwm\.exe|steam_app_.*|wineserver|winedevice\.exe|services\.exe|explorer\.exe|steam\.exe|pressure-vessel.*|Hyprland|start-hyprland|noctalia|quickshell|greetd|tuigreet|sshd|systemd|init|pipewire|wireplumber|Xwayland)$' --prefer '(^|/)(chrome|chromium|firefox|brave|zen|Discord|discord|electron|code|slack|spotify|obsidian|steamwebhelper)$'"
