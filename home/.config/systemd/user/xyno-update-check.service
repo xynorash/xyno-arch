@@ -1,0 +1,6 @@
+[Unit]
+Description=Check for Hyprland/noctalia updates and notify
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/xyno-update check --notify

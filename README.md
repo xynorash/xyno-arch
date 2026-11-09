@@ -129,6 +129,17 @@ straight out of `hyprland.lua`, so it can't go stale.
 - **Proton:** `proton-cachyos-slr` from the CachyOS repo (NTSYNC support); pick it per game or as the default
   under Steam's Settings, Compatibility. Steam's download tuning is in `home/.local/share/Steam/steam_dev.cfg`.
 
+## Updates
+
+Hyprland and noctalia are kept current with `xyno-update` (a full upgrade, never a partial one):
+
+- `xyno-update status` shows whether the running Hyprland/noctalia match the installed packages.
+- `xyno-update check` lists pending updates (`checkupdates`, no root); `--notify` sends a desktop notification
+  when Hyprland, noctalia or the kernel/boot stack have one. A daily user timer runs it:
+  `systemctl --user enable --now xyno-update-check.timer`.
+- `xyno-update apply` runs `sudo pacman -Syu`, restarts noctalia, and says whether you must log out (Hyprland
+  only takes effect after a new login) or reboot (kernel). Nothing installs unattended.
+
 ## Notes
 
 - `hyprland.lua` uses the Lua config format. hyprlang (`hyprland.conf`) is

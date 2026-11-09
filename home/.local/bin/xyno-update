@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# xyno-update: Hyprland/noctalia-aware updates. Always a FULL upgrade (a partial upgrade is unsupported on Arch).
+#
+#   xyno-update status           running vs installed Hyprland and noctalia
+#   xyno-update check [--notify] list pending updates (checkupdates, no root); --notify sends a desktop
+#                                notification when Hyprland/noctalia or the kernel/boot stack have an update
+#   xyno-update apply            full upgrade (sudo), restart noctalia, say what still needs a re-login or reboot
+#
+# Test hook: XYNO_UPDATE_FAKE='hyprland 0.57.1-1 -> 0.57.2-1' pretends those updates are pending.
+set -u
+WM_RE='^(hyprland|hypr[a-z0-9-]*|aquamarine|noctalia[a-z0-9-]*|quickshell[a-z0-9-]*|xdg-desktop-portal-hyprland)$'
+BOOT_RE='^(linux-cachyos-bore[a-z0-9-]*|mkinitcpio|amd-ucode|linux-firmware|limine|systemd|nvidia-580xx-utils)$'
+
+pending() { if [[ -n ${XYNO_UPDATE_FAKE-} ]]; then printf '%s\n' "$XYNO_UPDATE_FAKE"; else checkupdates 2>/dev/null; fi; }
+names()   { awk '{print $1}'; }
+# a running program whose binary was replaced on disk shows "(deleted)": it still runs the OLD version
+stale()   { local p; p=$(pgrep -u "$USER" -x "$1" | head -1) || true; [[ -n $p ]] && [[ $(readlink "/proc/$p/exe" 2>/dev/null) == *"(deleted)"* ]]; }
+ver()     { pacman -Q "$1" 2>/dev/null | awk '{print $2}'; }
+
+status() {
+  echo "hyprland  installed $(ver hyprland)   $(stale Hyprland && echo 'RUNNING AN OLDER BUILD: log out and back in to apply' || echo 'running build matches')"
+  echo "noctalia  installed $(ver noctalia)   $(stale noctalia && echo 'RUNNING AN OLDER BUILD: run xyno-update apply' || echo 'running build matches')"
+}
+
+check() {
+  local notify=0 list wm boot n
+  [[ ${1-} == --notify ]] && notify=1
+  command -v checkupdates >/dev/null || [[ -n ${XYNO_UPDATE_FAKE-} ]] || { echo "checkupdates not found: install pacman-contrib" >&2; exit 1; }
+  list=$(pending); n=$(grep -c . <<<"$list" || true)
+  if [[ -z $list ]]; then echo "up to date"; exit 0; fi
+  echo "$n update(s) pending:"; echo "$list"
+  wm=$(awk -v re="$WM_RE" '$1 ~ re' <<<"$list")
+  boot=$(names <<<"$list" | grep -E "$BOOT_RE" | tr '\n' ' ' || true)
+  if (( notify )); then
+    if [[ -n $wm ]]; then
+      notify-send -a xyno-update -u normal "Hyprland/noctalia update available" "$(head -6 <<<"$wm")"$'\n'"Run: xyno-update apply" 
+    elif [[ -n $boot ]]; then
+      notify-send -a xyno-update -u low "Kernel/boot update available" "$boot"$'\n'"Run: xyno-update apply"
+    fi
+  fi
+}
+
+apply() {
+  pgrep -x pacman >/dev/null && { echo "pacman is already running" >&2; exit 1; }
+  local list boot a
+  list=$(pending); [[ -z $list ]] && { echo "nothing to update"; exit 0; }
+  echo "$list"
+  boot=$(names <<<"$list" | grep -E "$BOOT_RE" | tr '\n' ' ' || true)
+  [[ -n $boot ]] && echo $'\n'"These rewrite your boot images; do not power off while it runs: $boot"
+  read -r -p "Run the full upgrade now? [y/N] " a; [[ $a == [yY]* ]] || exit 0
+  sudo pacman -Syu || exit 1
+  echo; status
+  if stale noctalia; then
+    echo "restarting noctalia..."; pkill -u "$USER" -x noctalia; sleep 1; setsid -f noctalia >/dev/null 2>&1
+  fi
+  stale Hyprland && notify-send -a xyno-update "Hyprland updated" "Log out and back in to apply it."
+  [[ $(uname -r) != $(ls /usr/lib/modules | sort -V | tail -1) ]] && echo "A new kernel is installed: reboot to use it."
+  return 0
+}
+
+case ${1-} in
+  status) status ;;
+  check)  check "${2-}" ;;
+  apply)  apply ;;
+  *)      sed -n '2,10p' "$0"; exit 1 ;;
+esac

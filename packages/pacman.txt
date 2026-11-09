@@ -86,6 +86,7 @@ obs-studio
 openbsd-netcat
 opencl-nvidia-580xx
 packagekit
+pacman-contrib
 perf
 pipewire
 pipewire-alsa
