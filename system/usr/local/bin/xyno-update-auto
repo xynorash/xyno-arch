@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# xyno-update-auto: run by xyno-update-auto.timer as root. Installs updates right away when Hyprland/noctalia
+# (or their libraries) have one. A partial upgrade is unsupported on Arch, so it is always a full -Syu.
+# It does NOT run when: a kernel/boot-stack update is pending (needs you present: boot images are rewritten),
+# or a Steam game is running. Both are retried at the next run.
+# Test hooks: XYNO_AUTO_FAKE='hyprland 1 -> 2' fakes the pending list; XYNO_AUTO_DRY=1 skips pacman.
+set -u
+WM_RE='^(hyprland|hypr[a-z0-9-]*|aquamarine|noctalia[a-z0-9-]*|quickshell[a-z0-9-]*|xdg-desktop-portal-hyprland)$'
+BOOT_RE='^(linux-cachyos-bore[a-z0-9-]*|mkinitcpio|amd-ucode|linux-firmware|limine|systemd|nvidia-580xx-utils)$'
+U=$(id -nu 1000); RT=/run/user/1000
+
+exec 9>/run/xyno-update-auto.lock; flock -n 9 || { echo "already running"; exit 0; }
+pgrep -x pacman >/dev/null && { echo "pacman is running, retry next time"; exit 0; }
+
+list=${XYNO_AUTO_FAKE:-$(checkupdates 2>/dev/null)}
+wm=$(awk -v re="$WM_RE" '$1 ~ re {print $1}' <<<"$list")
+[[ -z $wm ]] && { echo "no Hyprland/noctalia update pending"; exit 0; }
+boot=$(awk -v re="$BOOT_RE" '$1 ~ re {print $1}' <<<"$list" | tr '\n' ' ')
+[[ -n $boot ]] && { echo "skipping: boot-stack update pending ($boot): run xyno-update apply yourself"; exit 0; }
+pgrep -x reaper >/dev/null && { echo "skipping: a Steam game is running, retry next time"; exit 0; }
+
+echo "installing (full upgrade) for: $(tr '\n' ' ' <<<"$wm")"
+if [[ -n ${XYNO_AUTO_DRY-} ]]; then echo "dry run: would run pacman -Syu --noconfirm"; exit 0; fi
+pacman -Syu --noconfirm || { echo "pacman failed"; exit 1; }
+
+# apply what can be applied now: noctalia restarts (keeping Hyprland's environment); Hyprland needs a re-login
+stale() { local p; p=$(pgrep -u 1000 -x "$1" | head -1) || return 1; [[ $(readlink "/proc/$p/exe" 2>/dev/null) == *"(deleted)"* ]]; }
+as_user() { runuser -u "$U" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$RT/bus" XDG_RUNTIME_DIR="$RT" "$@"; }
+if stale noctalia; then
+  hp=$(pgrep -u 1000 -x Hyprland | head -1)
+  if [[ -n $hp ]]; then
+    mapfile -d '' envs < <(grep -z -E '^(XCURSOR|XDG_|WAYLAND|HYPRLAND|__GL|QT_|GDK_|MOZ_|ELECTRON|CLUTTER|GTK)[A-Z_]*=' "/proc/$hp/environ")
+    pkill -u 1000 -x noctalia; sleep 1
+    as_user env "${envs[@]}" setsid -f noctalia >/dev/null 2>&1 && echo "noctalia restarted"
+  fi
+fi
+stale Hyprland && as_user notify-send -a xyno-update "Hyprland updated" "Installed. Log out and back in to apply it."
+exit 0

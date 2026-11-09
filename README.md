@@ -140,7 +140,9 @@ Hyprland and noctalia are kept current with `xyno-update` (a full upgrade, never
   when Hyprland, noctalia or the kernel/boot stack have one. A daily user timer runs it:
   `systemctl --user enable --now xyno-update-check.timer`.
 - `xyno-update apply` runs `sudo pacman -Syu`, restarts noctalia, and says whether you must log out (Hyprland
-  only takes effect after a new login) or reboot (kernel). Nothing installs unattended.
+  only takes effect after a new login) or reboot (kernel). Hyprland/noctalia updates are the exception: `xyno-update-auto.timer` (system, hourly) installs them right away with a
+  full upgrade, restarts noctalia, and tells you to re-login for Hyprland. It skips (and the user timer notifies you)
+  when a kernel/boot-stack update is pending or a Steam game is running. Disable: `sudo systemctl disable --now xyno-update-auto.timer`.
 
 ## Notes
 

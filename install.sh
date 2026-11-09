@@ -82,7 +82,9 @@ if (( system )); then
          etc/systemd/logind.conf.d/10-power-key.conf
          etc/systemd/network/20-ethernet.network
          etc/tmpfiles.d/10-thp-madvise.conf
-         etc/pacman.d/hooks/limine-update.hook)
+         etc/pacman.d/hooks/limine-update.hook
+         etc/systemd/system/xyno-update-auto.service
+         etc/systemd/system/xyno-update-auto.timer)
   # the power-limit unit only makes sense with an NVIDIA GPU (it fails, and would stop this script, without one)
   nvidia=0
   if command -v nvidia-smi &>/dev/null && lspci 2>/dev/null | grep -qi 'vga.*nvidia\|3d.*nvidia'; then
@@ -98,6 +100,8 @@ if (( system )); then
   sudo systemctl daemon-reload
   sudo systemctl reload systemd-logind
   sudo systemctl enable --now earlyoom.service
+  sudo install -Dm755 "$repo/system/usr/local/bin/xyno-update-auto" /usr/local/bin/xyno-update-auto
+  sudo systemctl enable --now xyno-update-auto.timer
   if (( nvidia )); then sudo systemctl enable --now nvidia-powerlimit.service; fi
   echo "base services"
   sudo systemctl enable tailscaled.service \

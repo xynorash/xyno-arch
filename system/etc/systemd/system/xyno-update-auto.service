@@ -1,0 +1,10 @@
+[Unit]
+Description=Install Hyprland/noctalia updates right away
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/xyno-update-auto
+Nice=10
+IOSchedulingClass=idle
