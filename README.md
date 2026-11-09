@@ -58,9 +58,8 @@ Paths use `$HOME`; the noctalia config is rewritten for your home if it differs.
 - **Bootloader:** the kernel is one Unified Kernel Image per kernel, built by `mkinitcpio` from
   `mkinitcpio.d/linux-cachyos-bore.preset` into `/boot/EFI/Linux/cachyos-bore.efi`. Write
   `/etc/kernel/cmdline` with your own root `PARTUUID` (`blkid`), install `mkinitcpio.conf` and the
-  preset by hand, then `sudo mkinitcpio -p linux-cachyos-bore`. Keep `/etc/mkinitcpio.conf` for the
-  CachyOS kernel only: with `nvidia` in `MODULES`, an initramfs for a kernel without the module
-  (Arch's `linux`) fails to build.
+  preset by hand, then `sudo mkinitcpio -p linux-cachyos-bore`. The preset also builds a fallback image of the
+  same kernel (`cachyos-bore-fallback.efi`, without autodetect) that Limine lists as a second entry.
 - **Limine:** `sudo pacman -S limine`, then `sudo mkdir -p /boot/EFI/limine` and copy
   `/usr/share/limine/BOOTX64.EFI`, `system/boot/EFI/limine/limine.conf` and
   `wallpapers/starry-night-tokyo.png` (as `wallpaper.png`) into it. Register it without making it the

@@ -1,8 +1,12 @@
-# mkinitcpio preset for the CachyOS bore kernel: one combined boot image (UKI), like Arch's.
+# mkinitcpio preset for the CachyOS bore kernel: combined boot images (UKI), like Arch's.
 # Uses /etc/mkinitcpio.conf and the command line in /etc/kernel/cmdline.
 ALL_kver="/boot/vmlinuz-linux-cachyos-bore"
 
-PRESETS=('default')
+PRESETS=('default' 'fallback')
 
 default_uki="/boot/EFI/Linux/cachyos-bore.efi"
 default_options="--splash /usr/share/systemd/bootctl/splash-arch.bmp"
+
+# Same kernel, initramfs without the autodetect trimming: a safety net for a bad initramfs.
+fallback_uki="/boot/EFI/Linux/cachyos-bore-fallback.efi"
+fallback_options="-S autodetect"
