@@ -12,7 +12,8 @@ older NVIDIA hardware.
 | Compositor | Hyprland (Lua config, dwindle layout) |
 | Shell | noctalia — bar, launcher, notifications, lock screen, OSD |
 | Terminal | Ghostty |
-| File manager | Yazi |
+| Command line | bash + oh-my-posh cockpit prompt with transient collapse, ble.sh (history predictions, syntax colours, menu completion with carapace descriptions, fzf history picker), carapace, zoxide, width-responsive fastfetch banner (large/medium logo or compact, rendered in the background) with a chafa-made logo (`home/.config/xynorash/`, `tools/make-logo.sh`); the prompt drops vitals, host and path depth as the terminal narrows |
+| File manager | Strata (default for folders; Yazi in the terminal) |
 | Login | greetd + tuigreet, matrix background |
 | Theme | Tokyo Night, pushed to Hyprland/Ghostty/GTK/Yazi by noctalia's templates |
 | Font | JetBrainsMono Nerd Font |
@@ -23,15 +24,35 @@ Built for a Ryzen 7 5800X with a GTX 980 (Maxwell, 4 GB), 1080p @ 60 Hz.
 
 ## Install
 
+On a fresh Arch install (UEFI, btrfs, your user created, `base-devel` and `git` present):
+
 ```sh
 git clone https://github.com/xynorash/xyno-arch.git ~/xyno-arch
 cd ~/xyno-arch
-./install.sh            # symlink the home configs
-./install.sh --system   # also the /etc bits (sudo)
+./install.sh --packages --system   # packages, home symlinks, /etc files, services, snapper
 ```
 
+`--packages` needs `yay` first (`git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si`);
+without it only the pacman list is installed. The NVIDIA driver is the 580xx branch
+for the GTX 980 and builds through DKMS, so `linux-headers` must be installed
+(it is in `packages/pacman.txt`).
+
 Existing files are moved to `*.bak-<timestamp>` rather than overwritten.
-Package lists live in `packages/` (`pacman.txt`, `aur.txt`).
+Paths use `$HOME`; the noctalia config is rewritten for your home if it differs.
+
+### What stays manual (hardware-specific)
+
+- **Disk layout:** btrfs with subvolumes `@` (/), `@home`, `@log`, `@pkg` and a
+  `@swap` subvolume holding a 16 GB swapfile
+  (`btrfs filesystem mkswapfile --size 16g /swap/swapfile`, priority 10 in fstab; zram is priority 100).
+- **Bootloader:** `bootctl install`, then edit `system/etc/kernel/cmdline`
+  with your own root `PARTUUID` (`blkid`), and diff/install `mkinitcpio.conf`,
+  `mkinitcpio.d/linux.preset` and `boot/loader/loader.conf` before `sudo mkinitcpio -P`.
+- **Windows dual boot** is reached through "Reboot Into Firmware Interface".
+- **WinApps** (`~/.config/winapps`) is not tracked: it holds a password. Re-run its setup.
+- **Keyring:** make the login keyring the default and give it your login password,
+  or `gh`/git will find it locked.
+- After first boot: `sudo tailscale up`, `gh auth login`.
 
 ## Layout
 
@@ -51,7 +72,8 @@ straight out of `hyprland.lua`, so it can't go stale.
 | Key | Action |
 |---|---|
 | `Super + T` | Terminal |
-| `Super + E` | File manager (Yazi) |
+| `Super + E` | File manager (Strata) |
+| `Super + Alt + E` | File manager in the terminal (Yazi) |
 | `Super + D` | Launcher |
 | `Super + Alt + J` | JetBrains Toolbox |
 | `Super + Q` | Close window |
