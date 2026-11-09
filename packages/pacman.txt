@@ -105,6 +105,7 @@ python-pyserial
 python-setuptools
 python-wand
 ripgrep
+rustup
 samply
 slirp4netns
 spotify-launcher

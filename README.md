@@ -66,6 +66,8 @@ Paths use `$HOME`; the noctalia config is rewritten for your home if it differs.
   default: `sudo efibootmgr --create-only --disk /dev/nvme0n1 --part 1 --label Limine --loader '\EFI\limine\BOOTX64.EFI'`,
   test once with `sudo efibootmgr --bootnext <number>`, and only after it boots put it first in `efibootmgr --bootorder`.
   `install.sh --system` installs a pacman hook that refreshes `BOOTX64.EFI` when the `limine` package updates.
+- **Rust:** `rustup` (it replaces Arch's `rust`); after installing run `RUSTUP_HOME=~/sdk/rustup CARGO_HOME=~/sdk/cargo rustup default stable`
+  and create `~/sdk/cargo/env` with `export PATH="$HOME/sdk/cargo/bin:$PATH"` (`.bashrc` sources it).
 - **Keyring:** make the login keyring the default and give it your login password,
   or `gh`/git will find it locked.
 - **Login:** `noctalia-greeter` on greetd ([docs](https://docs.noctalia.dev/greeter/)). Write
