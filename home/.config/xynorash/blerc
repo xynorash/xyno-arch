@@ -1,0 +1,82 @@
+# ble.sh settings: the PSReadLine experience (history predictions, syntax
+# colours, menu completion, undo/redo, multi-line input) for bash.
+# Loaded by shell.sh via ble.sh's --rcfile.
+
+# ── History predictions ──────────────────────────────────────────────────────
+bleopt complete_auto_complete=1     # ghost-text suggestion from history as you type
+bleopt complete_auto_history=1
+bleopt complete_auto_delay=40
+bleopt complete_auto_menu=120       # candidate list below the prompt (PSReadLine "ListView")
+bleopt complete_menu_style=align-nowrap   # plain lists; carapace entries with descriptions switch to desc
+bleopt complete_menu_maxlines=12    # a 100-entry list (pacman -S fir) no longer fills the window
+bleopt complete_auto_complete_opts=syntax-unique   # ghost from ble.sh's own sources only when unambiguous
+bind 'set completion-ignore-case on'   # git COM -> commit, cd ~/vid -> ~/Videos
+bleopt history_share=1              # terminals share history; each picks up the others' commands when it runs one
+bleopt exec_errexit_mark=           # the prompt already shows ✗ for a failed command
+bleopt exec_elapsed_mark=           # ...and its own execution-time segment
+
+# ── Resize ───────────────────────────────────────────────────────────────────
+# Ghostty reflows the old (wide, 3-line) prompt when the window narrows, which
+# leaves ghost lines behind ble.sh's default redraw. Clearing the viewport like
+# Ctrl+L (scrollback is kept) redraws it cleanly, re-rendered for the new width.
+bleopt canvas_winch_action=clear
+
+# ── Colours: the XYNORASH palette ────────────────────────────────────────────
+ble-face \
+  command_builtin='fg=#00E5FF' \
+  command_alias='fg=#00E5FF' \
+  command_function='fg=#00E5FF' \
+  command_file='fg=#00E5FF' \
+  command_keyword='fg=#EE00FF' \
+  command_directory='fg=#00E5FF,underline' \
+  syntax_command='fg=#00E5FF' \
+  syntax_function_name='fg=#00E5FF,bold' \
+  argument_option='fg=#B84DFF' \
+  syntax_delimiter='fg=#EE00FF' \
+  syntax_expr='fg=#FFAA00' \
+  varname_number='fg=#FFAA00' \
+  syntax_varname='fg=#E0E0FF' \
+  varname_export='fg=#E0E0FF,bold' \
+  varname_array='fg=#E0E0FF' \
+  varname_hash='fg=#E0E0FF' \
+  varname_readonly='fg=#E0E0FF,italic' \
+  varname_new='fg=#E0E0FF' \
+  varname_expr='fg=#FFAA00' \
+  varname_transform='fg=#EE00FF' \
+  varname_unset='fg=#FF4488' \
+  varname_empty='fg=#FF4488' \
+  syntax_param_expansion='fg=#E0E0FF' \
+  syntax_quoted='fg=#00E5AA' \
+  syntax_quotation='fg=#00E5AA' \
+  syntax_comment='fg=#6B7399' \
+  syntax_error='fg=#FF4488' \
+  argument_error='fg=#FF4488' \
+  auto_complete='fg=#5F6A9A' \
+  menu_complete_selected='fg=#1A1B26,bg=#00E5FF' \
+  menu_filter_input='fg=#FFAA00' \
+  menu_desc_default='fg=#7A7AA0'
+
+# ── Keys ─────────────────────────────────────────────────────────────────────
+ble-bind -f up       history-search-backward   # Up/Down: history entries starting
+ble-bind -f down     history-search-forward    # with what is already typed
+ble-bind -f TAB      menu-complete
+ble-bind -f C-left   backward-cword
+ble-bind -f C-right  forward-cword
+ble-bind -f C-w      kill-backward-cword
+ble-bind -f C-z      undo
+ble-bind -f C-y      redo
+ble-bind -f S-RET    newline                   # Shift+Enter: new line
+ble-bind -m auto_complete -f S-RET auto_complete/cancel-default   # ...also while a ghost suggestion is showing
+ble-bind -f RET      'accept-line syntax'      # Enter runs a complete command (also multi-line), else adds a line
+ble-bind -f C-m      'accept-line syntax'
+ble-bind -f C-DEL    kill-backward-cword       # Ctrl+Backspace (kitty / modifyOtherKeys encodings)
+ble-bind -f M-DEL    kill-backward-cword       # Alt+Backspace (modifyOtherKeys / kitty)
+ble-bind -f 'M-C-?'  kill-backward-cword       # Alt+Backspace (plain ESC DEL)
+
+# ble.sh replaces `sleep` with an in-process builtin that ignores Ctrl+C and Ctrl+Z, and it
+# drops aliases of the names it wraps when it attaches, so set this one from the attach hook.
+blehook ATTACH+='alias sleep=/usr/bin/sleep'
+
+# Ctrl+R fuzzy history list, Ctrl+T file picker, Alt+C cd picker (fzf; loads after the first prompt)
+export FZF_DEFAULT_OPTS="--height=40% --layout=reverse --info=inline-right --prompt='❯ ' --pointer='▌' --color=fg:#E0E0FF,bg:-1,hl:#FFAA00,fg+:#FFFFFF,bg+:#1A1B26,hl+:#FFAA00,pointer:#00E5FF,prompt:#EE00FF,info:#5F6A9A,border:#2D2D4A,spinner:#AA00FF"
+command -v fzf >/dev/null && ble-import -d integration/fzf-key-bindings

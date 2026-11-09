@@ -1,0 +1,457 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "version": 4,
+  "final_space": false,
+  "blank_line_before_prompt": true,
+  "disable_notice": true,
+  "shell_integration": true,
+  "transient_prompt": {
+    "foreground": "#00E5AA",
+    "foreground_templates": [
+      "{{ if gt .Code 0 }}#FF6432{{ end }}"
+    ],
+    "background": "transparent",
+    "template": "{{ if gt .Code 0 }}✗{{ else }}❯{{ end }} "
+  },
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "type": "os",
+          "style": "plain",
+          "foreground": "#AA00FF",
+          "template": "╭─ {{ .Icon }} ",
+          "properties": {
+            "windows": "󰍲",
+            "arch": "󰣇",
+            "linux": ""
+          }
+        },
+        {
+          "type": "session",
+          "style": "plain",
+          "foreground": "#00E5AA",
+          "template": "{{ if env \"SSH_CLIENT\" }}<#FFAA00>󰢩 </>{{ end }}<#FF3296>{{ .UserName }}</>{{ if env \"XYNO_IS_ADMIN\" }}<#FF4488> 󰒃</>{{ end }}<#7A82AA>@</>{{ .HostName }} ",
+          "min_width": 70
+        },
+        {
+          "type": "session",
+          "style": "plain",
+          "foreground": "#00E5AA",
+          "template": "{{ if env \"SSH_CLIENT\" }}<#FFAA00>󰢩 </>{{ end }}<#FF3296>{{ .UserName }}</>{{ if env \"XYNO_IS_ADMIN\" }}<#FF4488> 󰒃</>{{ end }} ",
+          "max_width": 69
+        },
+        {
+          "type": "path",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "{{ .Path }} ",
+          "properties": {
+            "style": "agnoster_short",
+            "max_depth": 3,
+            "folder_separator_icon": "/",
+            "truncation_symbol": "…/"
+          },
+          "min_width": 100
+        },
+        {
+          "type": "path",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "{{ .Path }} ",
+          "properties": {
+            "style": "letter",
+            "folder_separator_icon": "/"
+          },
+          "min_width": 60,
+          "max_width": 99
+        },
+        {
+          "type": "path",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "{{ .Path }} ",
+          "properties": {
+            "style": "folder",
+            "folder_separator_icon": "/",
+            "truncation_symbol": "…/"
+          },
+          "max_width": 59
+        },
+        {
+          "type": "git",
+          "style": "plain",
+          "foreground": "#AA00FF",
+          "foreground_templates": [
+            "{{ if .Working.Changed }}#FFAA00{{ end }}",
+            "{{ if and (not .Working.Changed) .Staging.Changed }}#00E5AA{{ end }}"
+          ],
+          "template": "▸  {{ if gt (len .HEAD) 36 }}{{ substr 0 35 .HEAD }}…{{ else }}{{ .HEAD }}{{ end }}{{ if gt .Ahead 0 }} ⇡{{ .Ahead }}{{ end }}{{ if gt .Behind 0 }} ⇣{{ .Behind }}{{ end }}{{ with add .Working.Modified .Working.Deleted .Working.Added .Working.Moved }}{{ if gt . 0 }} <#FF6432>~{{ . }}</>{{ end }}{{ end }}{{ if gt .Working.Unmerged 0 }} <#FF4488>={{ .Working.Unmerged }}</>{{ end }}{{ with add .Staging.Modified .Staging.Deleted .Staging.Added .Staging.Moved }}{{ if gt . 0 }} <#FF3296>+{{ . }}</>{{ end }}{{ end }}{{ if gt .Working.Untracked 0 }} <#FF3296>?{{ .Working.Untracked }}</>{{ end }}{{ if gt .StashCount 0 }} <#FFC832>󰆓{{ .StashCount }}</>{{ end }} ",
+          "properties": {
+            "fetch_status": true
+          },
+          "min_width": 45
+        },
+        {
+          "type": "git",
+          "style": "plain",
+          "foreground": "#AA00FF",
+          "foreground_templates": [],
+          "template": "▸  {{ if gt (len .HEAD) 12 }}{{ substr 0 11 .HEAD }}…{{ else }}{{ .HEAD }}{{ end }} ",
+          "properties": {
+            "fetch_status": true
+          },
+          "min_width": 34,
+          "max_width": 44
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "#666",
+          "template": "▸"
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "│ ",
+          "min_width": 50
+        },
+        {
+          "type": "rust",
+          "style": "plain",
+          "foreground": "#FF6432",
+          "template": " 󱘗 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "java",
+          "style": "plain",
+          "foreground": "#FFC832",
+          "template": " ☕ {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "dotnet",
+          "style": "plain",
+          "foreground": "#AA00FF",
+          "template": " 󰪮 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "flutter",
+          "style": "plain",
+          "foreground": "#00E5AA",
+          "template": " 󰑴 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "dart",
+          "style": "plain",
+          "foreground": "#00E5AA",
+          "template": " 󰑣 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "node",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󰎙 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "python",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󰌠 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "go",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󰟓 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "ruby",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󰴭 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "php",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󰌟 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "lua",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󰢱 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "kotlin",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󱈙 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "swift",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󰛥 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "zig",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󱐋 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "cmake",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󰙷 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "crystal",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󰌳 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "nim",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󰆥 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "haskell",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󰲒 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "elixir",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "  {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "erlang",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "  {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "julia",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "  {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "perl",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "  {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "r",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󰟔 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "scala",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "  {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "ocaml",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "  {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "deno",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󰛵 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "angular",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": " 󰚿 {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "quasar",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "  {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "elm",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "  {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "v",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "  {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "bazel",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "  {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "buf",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "  {{ .Full }} ▸",
+          "min_width": 90
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "#FFAA00",
+          "template": "{{ if env \"XYNO_CPU\" }} 󰍛 {{ env \"XYNO_CPU\" }}% ▸{{ end }}",
+          "min_width": 50
+        },
+        {
+          "type": "sysinfo",
+          "style": "plain",
+          "foreground": "#FFAA00",
+          "template": " 󰘚 {{ .PhysicalPercentUsed | printf \"%.0f\" }}% ▸",
+          "min_width": 50
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "#EE00EE",
+          "template": "{{ if env \"XYNO_DISK\" }} 󰋊 /:{{ env \"XYNO_DISK\" }}% ▸{{ end }}",
+          "min_width": 70
+        },
+        {
+          "type": "battery",
+          "style": "plain",
+          "foreground": "#FFAA00",
+          "foreground_templates": [
+            "{{ if lt .Percentage 20 }}#FF6432{{ end }}"
+          ],
+          "template": " {{ .Icon }} {{ .Percentage }}% ▸",
+          "properties": {
+            "display_error": false,
+            "charged_icon": "󰁹",
+            "charging_icon": "󰂄",
+            "discharging_icon": "󰁺",
+            "not_charging_icon": "󰁺"
+          },
+          "min_width": 70
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "{{ if env \"XYNO_UPTIME\" }} ⬆ {{ env \"XYNO_UPTIME\" }} ▸{{ end }}",
+          "min_width": 90
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "{{ if env \"XYNO_IP\" }} 󰩟 {{ env \"XYNO_IP\" }} ▸{{ end }}",
+          "min_width": 110
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "#FF3296",
+          "template": "{{ if env \"XYNO_PROCS\" }} 󰄹 {{ env \"XYNO_PROCS\" }} ▸{{ end }}",
+          "min_width": 120
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "#00E5FF",
+          "template": "╰─ "
+        },
+        {
+          "type": "executiontime",
+          "style": "plain",
+          "foreground": "#FF6432",
+          "template": "{{ .FormattedMs }} ",
+          "properties": {
+            "threshold": 500,
+            "style": "austin"
+          }
+        },
+        {
+          "type": "time",
+          "style": "plain",
+          "foreground": "#EE00EE",
+          "template": "{{ .CurrentDate | date \"Mon 02 Jan  15:04\" }} ",
+          "min_width": 60
+        },
+        {
+          "type": "exit",
+          "style": "plain",
+          "foreground": "#00E5AA",
+          "foreground_templates": [
+            "{{ if gt .Code 0 }}#FF6432{{ end }}"
+          ],
+          "template": "{{ if gt .Code 0 }}✗ {{ .Code }}{{ else }}❯{{ end }} ",
+          "properties": {
+            "always_enabled": true
+          }
+        }
+      ]
+    }
+  ]
+}
