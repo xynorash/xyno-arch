@@ -74,6 +74,8 @@ Paths use `$HOME`; the noctalia config is rewritten for your home if it differs.
   set the default user, session `Hyprland`, keyboard and cursor in `/var/lib/noctalia-greeter/greeter.toml`;
   copy your cursor theme to `/usr/local/share/icons` (the greeter account cannot read `~/.local`); then
   `sudo systemctl enable greetd` and run Settings, Security, Noctalia Greeter, Sync Now once in the desktop.
+  Copy `system/etc/pam.d/greetd` over `/etc/pam.d/greetd` (it adds GNOME Keyring unlock at login, replacing a package file by hand);
+  the keyring must be named `login` and have your login password, or the unlock dialog comes back.
   To hide the UWSM session entry, add `NoExtract = usr/share/wayland-sessions/hyprland-uwsm.desktop` to `/etc/pacman.conf`.
 - After first boot: `sudo tailscale up`, `gh auth login`, and `tools/install-strata.sh` for Strata.
 
