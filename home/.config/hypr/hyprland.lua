@@ -4,6 +4,17 @@
 
 local mod = "SUPER"
 
+-- ─── Display ─────────────────────────────────────────────────────────────
+-- Laptop panel (Latitude 7480, 14" 1920x1080): pinned to 1x so Hyprland's auto-scale (1.5 here) can't
+-- shrink the workspace. A rule for an output that does not exist is ignored, so this is harmless on the
+-- desktop, whose monitor is left to auto-detect.
+hl.monitor({
+    output   = "eDP-1",
+    mode     = "1920x1080@60",
+    position = "0x0",
+    scale    = 1,
+})
+
 -- ─── Environment ─────────────────────────────────────────────────────────
 -- Wayland-first for every toolkit. DISPLAY is left alone: the Steam client
 -- is X11-only and needs XWayland.
