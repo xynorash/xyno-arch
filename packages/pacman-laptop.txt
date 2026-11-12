@@ -1,0 +1,14 @@
+# Extra packages for machines with a battery (install.sh --packages adds this list when /sys/class/power_supply/BAT0 exists).
+# Wi-Fi: noctalia drives iwd (or NetworkManager/wpa_supplicant); systemd-networkd does the addressing.
+iwd
+# Bluetooth: noctalia's Bluetooth panel uses BlueZ.
+bluez
+bluez-utils
+# Battery widget (UPower) and the power-profile widget/tile (power-profiles-daemon).
+upower
+power-profiles-daemon
+# Intel graphics userspace: Vulkan, and VA-API hardware video decode (less CPU and heat in the browser and mpv).
+vulkan-intel
+intel-media-driver
+# CPU microcode for Intel machines (the desktop gets amd-ucode from packages/pacman.txt).
+intel-ucode

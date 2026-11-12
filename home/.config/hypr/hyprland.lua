@@ -237,3 +237,6 @@ hl.window_rule({
 -- (kept in this exact require("noctalia") form so noctalia does not append its own unguarded copy)
 local ok, noctalia = pcall(function() return require("noctalia") end)
 if ok then noctalia.apply_theme() end
+
+-- Per-machine layer: laptop.lua exists only where install.sh linked home-laptop/ (a battery is present).
+pcall(function() require("laptop") end)

@@ -144,6 +144,20 @@ Hyprland and noctalia are kept current with `xyno-update` (a full upgrade, never
   full upgrade, restarts noctalia, and tells you to re-login for Hyprland. It skips (and the user timer notifies you)
   when a kernel/boot-stack update is pending or a Steam game is running. Disable: `sudo systemctl disable --now xyno-update-auto.timer`.
 
+## Laptop
+
+Machines with a battery get an extra layer; the desktop never sees it:
+
+- `home-laptop/` is linked on top of `home/` by `install.sh` when `/sys/class/power_supply/BAT0` exists. It holds
+  `noctalia/laptop.toml` (bar: Wi-Fi, Bluetooth, brightness, battery; control-center tabs and tiles) and `hypr/laptop.lua`
+  (touchpad, brightness keys), which `hyprland.lua` requires if present. noctalia loads every `*.toml` in its folder in
+  alphabetical order and a list in a later file replaces the earlier one, so `laptop.toml` wins over `config.toml`.
+- `packages/pacman-laptop.txt` is added to `--packages` on such machines (iwd, bluez, upower, power-profiles-daemon,
+  Intel graphics userspace, intel-ucode).
+- Enable the services by hand: `sudo systemctl enable --now iwd bluetooth upower power-profiles-daemon`. iwd needs
+  `/etc/iwd/main.conf` with `EnableNetworkConfiguration=false` because systemd-networkd does the DHCP.
+- The Hyprland monitor rule for `eDP-1` in `hyprland.lua` pins the panel to scale 1.
+
 ## Notes
 
 - `hyprland.lua` uses the Lua config format. hyprlang (`hyprland.conf`) is

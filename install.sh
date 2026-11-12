@@ -24,6 +24,10 @@ done
 if (( packages )); then
   echo "installing packages (sudo)"
   sudo pacman -S --needed - < <(grep -vE '^\s*(#|$)' "$repo/packages/pacman.txt")
+  if [[ -d /sys/class/power_supply/BAT0 && -f $repo/packages/pacman-laptop.txt ]]; then
+    echo "  battery found: adding packages/pacman-laptop.txt"
+    sudo pacman -S --needed - < <(grep -vE '^\s*(#|$)' "$repo/packages/pacman-laptop.txt")
+  fi
   if ! command -v yay &>/dev/null; then
     echo "  yay is not installed: build it from https://aur.archlinux.org/yay.git, then rerun with --packages"
   else
@@ -42,8 +46,12 @@ backup() {
 }
 
 echo "linking home configs"
+# home-laptop/ is an extra layer for machines with a battery (Wi-Fi/Bluetooth/battery widgets, touchpad, brightness keys)
+roots=("$repo/home")
+if [[ -d /sys/class/power_supply/BAT0 && -d $repo/home-laptop ]]; then roots+=("$repo/home-laptop"); echo "  battery found: adding home-laptop/"; fi
 while IFS= read -r -d '' src; do
-  rel=${src#"$repo"/home/}
+  rel=${src#"$repo"/home-laptop/}
+  rel=${rel#"$repo"/home/}
   dst=$HOME/$rel
   mkdir -p "$(dirname "$dst")"
   # a copy rewritten for another $HOME (see below) that is already current is left alone
@@ -54,7 +62,7 @@ while IFS= read -r -d '' src; do
   backup "$dst"
   ln -s "$src" "$dst"
   echo "  $dst -> $src"
-done < <(find "$repo/home" -type f -print0)
+done < <(find "${roots[@]}" -type f -print0)
 
 # noctalia's TOML cannot expand $HOME; if this is not the original home, swap
 # the symlink for a copy with the path rewritten.

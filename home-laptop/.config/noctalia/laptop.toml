@@ -1,0 +1,44 @@
+# Laptop-only layer on top of config.toml. noctalia loads every *.toml in this folder in alphabetical order, so this
+# file (l > c) overrides the shared one. install.sh links it only where a battery exists; the desktop never sees it.
+
+[bar.default]
+# Shared bar plus what a laptop has: Wi-Fi, Bluetooth, brightness and battery. sysmon_gpu is dropped (Intel iGPU).
+end = [ "tray", "sysmon_cpu", "sysmon_ram", "sysmon_net", "keyboard_layout", "network", "bluetooth", "volume", "volume_input", "brightness", "battery", "control-center", "session" ]
+
+[control_center]
+# The shared config hides these tabs because the desktop has no radios or battery.
+hidden_tabs = []
+
+# Toggle tiles: the shared list plus Wi-Fi, Bluetooth and power profile (a list in this file replaces the shared one).
+[[control_center.shortcuts]]
+type = "audio"
+
+[[control_center.shortcuts]]
+type = "mic_mute"
+
+[[control_center.shortcuts]]
+type = "wifi"
+
+[[control_center.shortcuts]]
+type = "bluetooth"
+
+[[control_center.shortcuts]]
+type = "power_profile"
+
+[[control_center.shortcuts]]
+type = "caffeine"
+
+[[control_center.shortcuts]]
+type = "nightlight"
+
+[[control_center.shortcuts]]
+type = "notification"
+
+[[control_center.shortcuts]]
+type = "clipboard"
+
+[[control_center.shortcuts]]
+type = "wallpaper"
+
+[[control_center.shortcuts]]
+type = "session"
