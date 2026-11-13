@@ -1,0 +1,13 @@
+[Unit]
+Description=Latitude 7480 stability hardening (limit deep C-states, NVMe APST off)
+ConditionPathExists=/sys/class/power_supply/BAT0
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/stability-hardening on
+ExecStop=/usr/local/bin/stability-hardening off
+
+[Install]
+WantedBy=multi-user.target

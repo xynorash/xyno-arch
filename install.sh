@@ -111,6 +111,25 @@ if (( system )); then
   sudo install -Dm755 "$repo/system/usr/local/bin/xyno-update-auto" /usr/local/bin/xyno-update-auto
   sudo systemctl enable --now xyno-update-auto.timer
   if (( nvidia )); then sudo systemctl enable --now nvidia-powerlimit.service; fi
+
+  # laptop layer: only where a battery exists (see README, "Laptop")
+  if [[ -d /sys/class/power_supply/BAT0 && -d $repo/system-laptop ]]; then
+    echo "laptop layer (battery found)"
+    for rel in etc/systemd/system/stability-hardening.service etc/sysctl.d/90-crash-recovery.conf etc/iwd/main.conf; do
+      sudo install -Dm644 "$repo/system-laptop/$rel" "/$rel"
+      echo "  /$rel"
+    done
+    sudo install -Dm755 "$repo/system-laptop/usr/local/bin/stability-hardening" /usr/local/bin/stability-hardening
+    sudo sysctl --system >/dev/null
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now stability-hardening.service
+    sudo systemctl enable systemd-pstore.service    # moves a saved crash dump to /var/lib/systemd/pstore at the next boot
+    # radios, battery and power profiles; harmless if the packages from pacman-laptop.txt are not installed yet
+    for u in iwd bluetooth upower power-profiles-daemon; do
+      systemctl cat "$u.service" &>/dev/null && sudo systemctl enable --now "$u.service"
+    done
+    laptop=1
+  fi
   echo "base services"
   sudo systemctl enable tailscaled.service \
        systemd-networkd.service systemd-resolved.service systemd-timesyncd.service
@@ -140,6 +159,12 @@ if (( system )); then
   echo "  /etc/kernel/cmdline is not in the repo: it holds your root PARTUUID (blkid), e.g."
   echo "    root=PARTUUID=<yours> zswap.enabled=0 rootflags=subvol=@ rw rootfstype=btrfs"
   echo "compare them by hand, then run: sudo mkinitcpio -p linux-cachyos-bore"
+  if [[ ${laptop-0} == 1 ]]; then
+    echo
+    echo "laptop: append these to /etc/kernel/cmdline, then rebuild the boot images (they are what keeps a Latitude 7480 up):"
+    echo "  efi_pstore.pstore_disable=0 nvme_core.default_ps_max_latency_us=0 i915.enable_psr=0 i915.enable_dc=0"
+    echo "  (the first lets the kernel save a crash dump; the others turn off the NVMe and Intel display power-saving states)"
+  fi
   echo
   echo "login screen: noctalia-greeter comes from packages/pacman.txt; set it up by hand (README, \"Login\")"
 fi

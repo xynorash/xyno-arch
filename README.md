@@ -158,6 +158,25 @@ Machines with a battery get an extra layer; the desktop never sees it:
   `/etc/iwd/main.conf` with `EnableNetworkConfiguration=false` because systemd-networkd does the DHCP.
 - The Hyprland monitor rule for `eDP-1` in `hyprland.lua` pins the panel to scale 1.
 
+### Latitude 7480 stability layer (`system-laptop/`)
+
+This Latitude suffered sudden hard resets (a power-loss-like stop with nothing in the logs; the SSD's `unsafe_shutdowns`
+counter counted them). After a full update and the settings below it ran 25 hours with the desktop up and no stop; that is
+a good sign, not a proof. `install.sh --system` installs them where a battery exists:
+
+- `stability-hardening` + its unit: disables the deepest CPU idle states (C7s to C10) and the NVMe's autonomous power-state
+  transitions (APST) at every boot. `stability-hardening status` shows the state.
+- `90-crash-recovery.conf`: reboot 10 s after a panic and turn oopses and soft/hard lockups into panics, so a freeze becomes
+  a restart with evidence instead of a hang.
+- Kernel command line (add by hand to `/etc/kernel/cmdline`, then `sudo mkinitcpio -P`):
+  `efi_pstore.pstore_disable=0 nvme_core.default_ps_max_latency_us=0 i915.enable_psr=0 i915.enable_dc=0`.
+  Arch ships the EFI crash store switched off; the first parameter turns it on, and `systemd-pstore` then archives a dump to
+  `/var/lib/systemd/pstore` after the next boot. The others disable Intel display and NVMe power saving.
+- `etc/iwd/main.conf`: iwd handles the radio, systemd-networkd does DHCP.
+- To tell whether a stop happened: the SSD counter rises by one per sudden power loss (`nvme smart-log /dev/nvme0n1 | grep unsafe`).
+- Do not run a hardware watchdog (`RuntimeWatchdogSec`) on this machine: the Intel `intel_oc_wdt` keeps counting after its device
+  is closed and resets the laptop if nothing feeds it.
+
 ## Notes
 
 - `hyprland.lua` uses the Lua config format. hyprlang (`hyprland.conf`) is

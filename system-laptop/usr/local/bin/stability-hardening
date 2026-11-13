@@ -1,0 +1,15 @@
+#!/bin/bash
+# Latitude 7480 stability hardening. Usage: stability-hardening on|off|status
+#  - CPU: disable the deepest C-states (C7s, C8, C9, C10): Skylake mobile idles into them and some units freeze there.
+#  - NVMe: turn off APST (autonomous power-state transitions): DRAM-less drives such as the Crucial P3 can hang on wake-up.
+case ${1:-status} in
+  on|off)
+    v=$([ "$1" = on ] && echo 1 || echo 0)
+    for s in /sys/devices/system/cpu/cpu[0-9]*/cpuidle/state*; do
+      case $(cat $s/name) in C7s|C8|C9|C10) echo $v > $s/disable ;; esac
+    done
+    echo $([ "$1" = on ] && echo 0 || echo auto) > /sys/class/nvme/nvme0/power/pm_qos_latency_tolerance_us 2>/dev/null
+    ;;
+esac
+echo "deep C-states disabled: $(for s in /sys/devices/system/cpu/cpu0/cpuidle/state*; do [ "$(cat $s/disable)" = 1 ] && printf '%s ' "$(cat $s/name)"; done)"
+echo "nvme APST: $(nvme get-feature /dev/nvme0 -f 0x0c -H 2>/dev/null | grep -o 'APSTE.*' | head -1)   latency tolerance: $(cat /sys/class/nvme/nvme0/power/pm_qos_latency_tolerance_us 2>/dev/null)"
