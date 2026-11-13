@@ -9,7 +9,7 @@
 # Test hook: XYNO_UPDATE_FAKE='hyprland 0.57.1-1 -> 0.57.2-1' pretends those updates are pending.
 set -u
 WM_RE='^(hyprland|hypr[a-z0-9-]*|aquamarine|noctalia[a-z0-9-]*|quickshell[a-z0-9-]*|xdg-desktop-portal-hyprland)$'
-BOOT_RE='^(linux-cachyos-bore[a-z0-9-]*|mkinitcpio|amd-ucode|linux-firmware|limine|systemd|nvidia-580xx-utils)$'
+BOOT_RE='^(linux-cachyos-bore[a-z0-9-]*|nvidia-580xx-utils|lib32-nvidia-580xx-utils|opencl-nvidia-580xx)$'
 
 pending() { if [[ -n ${XYNO_UPDATE_FAKE-} ]]; then printf '%s\n' "$XYNO_UPDATE_FAKE"; else checkupdates 2>/dev/null; fi; }
 names()   { awk '{print $1}'; }

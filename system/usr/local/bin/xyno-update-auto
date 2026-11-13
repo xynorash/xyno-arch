@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # xyno-update-auto: run by xyno-update-auto.timer as root. Installs updates right away when Hyprland/noctalia
 # (or their libraries) have one. A partial upgrade is unsupported on Arch, so it is always a full -Syu.
-# It does NOT run when: a kernel/boot-stack update is pending (needs you present: boot images are rewritten),
-# or a Steam game is running. Both are retried at the next run.
+# It holds back the kernel and its NVIDIA packages (reboot needed, you notified), and does NOT run while a Steam game
+# is running (retried at the next run).
 # Test hooks: XYNO_AUTO_FAKE='hyprland 1 -> 2' fakes the pending list; XYNO_AUTO_DRY=1 skips pacman.
 set -u
 WM_RE='^(hyprland|hypr[a-z0-9-]*|aquamarine|noctalia[a-z0-9-]*|quickshell[a-z0-9-]*|xdg-desktop-portal-hyprland)$'
-BOOT_RE='^(linux-cachyos-bore[a-z0-9-]*|mkinitcpio|amd-ucode|linux-firmware|limine|systemd|nvidia-580xx-utils)$'
+# The kernel and the NVIDIA packages that must match it are held back (they need a reboot and a person present); everything else installs.
+HOLD_RE='^(linux-cachyos-bore[a-z0-9-]*|nvidia-580xx-utils|lib32-nvidia-580xx-utils|opencl-nvidia-580xx)$'
 U=$(id -nu 1000); RT=/run/user/1000
 
 exec 9>/run/xyno-update-auto.lock; flock -n 9 || { echo "already running"; exit 0; }
@@ -15,13 +16,13 @@ pgrep -x pacman >/dev/null && { echo "pacman is running, retry next time"; exit 
 list=${XYNO_AUTO_FAKE:-$(checkupdates 2>/dev/null)}
 wm=$(awk -v re="$WM_RE" '$1 ~ re {print $1}' <<<"$list")
 [[ -z $wm ]] && { echo "no Hyprland/noctalia update pending"; exit 0; }
-boot=$(awk -v re="$BOOT_RE" '$1 ~ re {print $1}' <<<"$list" | tr '\n' ' ')
-[[ -n $boot ]] && { echo "skipping: boot-stack update pending ($boot): run xyno-update apply yourself"; exit 0; }
+held=$(awk -v re="$HOLD_RE" '$1 ~ re {print $1}' <<<"$list" | paste -sd,)
+ignore=(); [[ -n $held ]] && ignore=(--ignore "$held")
 pgrep -x reaper >/dev/null && { echo "skipping: a Steam game is running, retry next time"; exit 0; }
 
-echo "installing (full upgrade) for: $(tr '\n' ' ' <<<"$wm")"
-if [[ -n ${XYNO_AUTO_DRY-} ]]; then echo "dry run: would run pacman -Syu --noconfirm"; exit 0; fi
-pacman -Syu --noconfirm || { echo "pacman failed"; exit 1; }
+echo "installing (full upgrade${held:+, holding back the kernel stack: $held}) for: $(tr '\n' ' ' <<<"$wm")"
+if [[ -n ${XYNO_AUTO_DRY-} ]]; then echo "dry run: would run pacman -Syu --noconfirm ${ignore[*]}"; exit 0; fi
+pacman -Syu --noconfirm "${ignore[@]}" || { echo "pacman failed"; exit 1; }
 
 # apply what can be applied now: noctalia restarts (keeping Hyprland's environment); Hyprland needs a re-login
 stale() { local p; p=$(pgrep -u 1000 -x "$1" | head -1) || return 1; [[ $(readlink "/proc/$p/exe" 2>/dev/null) == *"(deleted)"* ]]; }
@@ -35,4 +36,5 @@ if stale noctalia; then
   fi
 fi
 stale Hyprland && as_user notify-send -a xyno-update "Hyprland updated" "Installed. Log out and back in to apply it."
+[[ -n $held ]] && as_user notify-send -a xyno-update -u normal "Kernel update waiting" "$held"$'\n'"Run: xyno-update apply, then reboot."
 exit 0
