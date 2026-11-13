@@ -146,6 +146,8 @@ Updates install themselves; you are told afterwards. `xyno-update-auto.timer` (s
 - **It cannot go quiet:** every run records why it did or did not act (`/var/lib/xyno-update/`, log in `/var/log/xyno-update.log`).
   If updates have been pending for more than 36 hours you get a critical notification with the last reason.
 - Before a kernel update the working boot image is kept as `<name>-prev.efi`; Limine has a "previous kernel" entry for it.
+- The running kernel's modules are saved before and restored after a kernel upgrade (the kernel package deletes them, which would
+  break loading any module until the reboot); leftovers are removed once you have rebooted.
 - AUR packages are **not** automated (they build unreviewed code and would need a passwordless root path); the notification
   tells you how many are waiting: run `yay -Sua`.
 - `xyno-update status` shows the last run; `xyno-update apply` runs the updater right now.

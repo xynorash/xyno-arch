@@ -5,6 +5,8 @@
 #   - applied now: noctalia is restarted; Hyprland takes effect at the next login (the notification says so)
 #   - a new kernel needs a reboot: this script NEVER reboots; it tells the user and reminds once a day
 #   - before a kernel update the current boot images are kept as <name>-prev.efi (a "previous kernel" boot entry)
+#   - the RUNNING kernel's /usr/lib/modules/<ver> is saved before and restored after (the kernel package deletes it, which would
+#     break loading any module until the reboot); leftovers are removed once that kernel is no longer running
 #   - it only waits while a Steam game or another pacman is running, and retries at the next run
 #   - STUCK GUARD: if updates have been pending for more than 36 h it notifies the user with the last reason
 #
@@ -37,6 +39,15 @@ wait_for() { # wait_for <reason>
   exit 0
 }
 
+# Module folders of old kernels: a folder that is not the running kernel and whose vmlinuz no package owns is a leftover of
+# the restore below (or of an uninstalled kernel) and is removed. A kernel that is installed is always owned, so it is kept.
+run_ver=$(uname -r)
+for d in /usr/lib/modules/*/; do
+  v=$(basename "$d"); [[ $v == "$run_ver" ]] && continue
+  if ! pacman -Qo "${d}vmlinuz" >/dev/null 2>&1 && [[ -z ${XYNO_AUTO_DRY-} ]]; then rm -rf "$d"; log "removed leftover module folder $v"; fi
+done
+for d in "$STATE"/modules/*/; do [[ -d $d && $(basename "$d") != "$run_ver" ]] && rm -rf "$d"; done
+
 # A kernel that is installed but not running: remind once a day, never reboot.
 newest=$(for d in /usr/lib/modules/*/; do basename "$d"; done | sort -V | tail -1)
 if [[ -n $newest && $newest != "$(uname -r)" ]]; then
@@ -68,6 +79,10 @@ if [[ -n $kernel_pending && -z ${XYNO_AUTO_DRY-} ]]; then
   done
 fi
 
+if [[ -n $kernel_pending && -z ${XYNO_AUTO_DRY-} && -d /usr/lib/modules/$run_ver ]]; then
+  mkdir -p "$STATE/modules" && cp -a --reflink=auto "/usr/lib/modules/$run_ver" "$STATE/modules/" && log "saved the running kernel's modules ($run_ver)"
+fi
+
 log "installing $n update(s)${kernel_pending:+ including kernel: $kernel_pending}"
 if [[ -n ${XYNO_AUTO_DRY-} ]]; then echo "dry run: would run pacman -Syu --noconfirm"; ok=0
 else
@@ -85,6 +100,9 @@ if (( ok != 0 )); then
 fi
 
 # --- success: apply and report ---
+if [[ -n $kernel_pending && ! -d /usr/lib/modules/$run_ver && -d $STATE/modules/$run_ver && -z ${XYNO_AUTO_DRY-} ]]; then
+  cp -a --reflink=auto "$STATE/modules/$run_ver" /usr/lib/modules/ && depmod -a "$run_ver" && log "restored the running kernel's modules ($run_ver) until you reboot"
+fi
 applied=(); needs=()
 restart_noctalia() {   # returns 0 only if the NEW process is still alive a few seconds later
   local np wl sig; local -a envs=()
