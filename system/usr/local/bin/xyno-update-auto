@@ -1,40 +1,123 @@
 #!/usr/bin/env bash
-# xyno-update-auto: run by xyno-update-auto.timer as root. Installs updates right away when Hyprland/noctalia
-# (or their libraries) have one. A partial upgrade is unsupported on Arch, so it is always a full -Syu.
-# It holds back the kernel and its NVIDIA packages (reboot needed, you notified), and does NOT run while a Steam game
-# is running (retried at the next run).
-# Test hooks: XYNO_AUTO_FAKE='hyprland 1 -> 2' fakes the pending list; XYNO_AUTO_DRY=1 skips pacman.
+# xyno-update-auto: runs hourly (system timer) as root. It installs EVERY pending update with a full upgrade (a partial
+# upgrade is unsupported on Arch), applies what it can, tells the user afterwards, and records why it did or did not act.
+#
+#   - applied now: noctalia is restarted; Hyprland takes effect at the next login (the notification says so)
+#   - a new kernel needs a reboot: this script NEVER reboots; it tells the user and reminds once a day
+#   - before a kernel update the current boot images are kept as <name>-prev.efi (a "previous kernel" boot entry)
+#   - it only waits while a Steam game or another pacman is running, and retries at the next run
+#   - STUCK GUARD: if updates have been pending for more than 36 h it notifies the user with the last reason
+#
+# State for `xyno-update status`: /var/lib/xyno-update/.  Log: /var/log/xyno-update.log.
+# Test hooks: XYNO_AUTO_FAKE='pkg old -> new' fakes the pending list; XYNO_AUTO_DRY=1 skips pacman and prints notifications.
 set -u
-WM_RE='^(hyprland|hypr[a-z0-9-]*|aquamarine|noctalia[a-z0-9-]*|quickshell[a-z0-9-]*|xdg-desktop-portal-hyprland)$'
-# The kernel and the NVIDIA packages that must match it are held back (they need a reboot and a person present); everything else installs.
-HOLD_RE='^(linux-cachyos-bore[a-z0-9-]*|nvidia-580xx-utils|lib32-nvidia-580xx-utils|opencl-nvidia-580xx)$'
-U=$(id -nu 1000); RT=/run/user/1000
+U=$(id -nu 1000); RT=/run/user/1000; STATE=/var/lib/xyno-update; LOG=/var/log/xyno-update.log
+STUCK_HOURS=36
+mkdir -p "$STATE"
+exec 9>/run/xyno-update-auto.lock; flock -n 9 || exit 0
+now=$(date +%s)
 
-exec 9>/run/xyno-update-auto.lock; flock -n 9 || { echo "already running"; exit 0; }
-pgrep -x pacman >/dev/null && { echo "pacman is running, retry next time"; exit 0; }
+log()       { printf '%s %s\n' "$(date '+%F %T')" "$*" | tee -a "$LOG" >&2; }
+as_user()   { runuser -u "$U" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$RT/bus" XDG_RUNTIME_DIR="$RT" "$@"; }
+notify()    { # notify <urgency> <title> <body>
+  if [[ -n ${XYNO_AUTO_DRY-} ]]; then echo "NOTIFY[$1] $2 :: $3"; return; fi
+  as_user notify-send -a xyno-update -u "$1" "$2" "$3" 2>/dev/null || true
+}
+state()     { printf '%s\n' "$2" > "$STATE/$1"; }
+get()       { cat "$STATE/$1" 2>/dev/null || echo "${2-}"; }
+stale()     { local p; p=$(pgrep -u 1000 -x "$1" | head -1) || return 1; [[ $(readlink "/proc/$p/exe" 2>/dev/null) == *"(deleted)"* ]]; }
 
-list=${XYNO_AUTO_FAKE:-$(checkupdates 2>/dev/null)}
-wm=$(awk -v re="$WM_RE" '$1 ~ re {print $1}' <<<"$list")
-[[ -z $wm ]] && { echo "no Hyprland/noctalia update pending"; exit 0; }
-held=$(awk -v re="$HOLD_RE" '$1 ~ re {print $1}' <<<"$list" | paste -sd,)
-ignore=(); [[ -n $held ]] && ignore=(--ignore "$held")
-pgrep -x reaper >/dev/null && { echo "skipping: a Steam game is running, retry next time"; exit 0; }
-
-echo "installing (full upgrade${held:+, holding back the kernel stack: $held}) for: $(tr '\n' ' ' <<<"$wm")"
-if [[ -n ${XYNO_AUTO_DRY-} ]]; then echo "dry run: would run pacman -Syu --noconfirm ${ignore[*]}"; exit 0; fi
-pacman -Syu --noconfirm "${ignore[@]}" || { echo "pacman failed"; exit 1; }
-
-# apply what can be applied now: noctalia restarts (keeping Hyprland's environment); Hyprland needs a re-login
-stale() { local p; p=$(pgrep -u 1000 -x "$1" | head -1) || return 1; [[ $(readlink "/proc/$p/exe" 2>/dev/null) == *"(deleted)"* ]]; }
-as_user() { runuser -u "$U" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$RT/bus" XDG_RUNTIME_DIR="$RT" "$@"; }
-if stale noctalia; then
-  hp=$(pgrep -u 1000 -x Hyprland | head -1)
-  if [[ -n $hp ]]; then
-    mapfile -d '' envs < <(grep -z -E '^(XCURSOR|XDG_|WAYLAND|HYPRLAND|__GL|QT_|GDK_|MOZ_|ELECTRON|CLUTTER|GTK)[A-Z_]*=' "/proc/$hp/environ")
-    pkill -u 1000 -x noctalia; sleep 1
-    as_user env "${envs[@]}" setsid -f noctalia >/dev/null 2>&1 && echo "noctalia restarted"
+# Why nothing was installed this time; also raises the stuck alarm when it has gone on too long.
+wait_for() { # wait_for <reason>
+  log "waiting: $1"; state last_result "waiting: $1"; state last_attempt "$now"
+  local ok; ok=$(get last_ok "$now"); local age=$(( (now - ok) / 3600 )) lastn; lastn=$(get last_stuck_notify 0)
+  if (( age >= STUCK_HOURS )) && (( now - lastn >= 43200 )); then
+    notify critical "Updates are NOT being installed" "Pending for ${age} h. Last reason: $1"; state last_stuck_notify "$now"
   fi
+  exit 0
+}
+
+# A kernel that is installed but not running: remind once a day, never reboot.
+newest=$(for d in /usr/lib/modules/*/; do basename "$d"; done | sort -V | tail -1)
+if [[ -n $newest && $newest != "$(uname -r)" ]]; then
+  [[ -f $STATE/reboot-needed ]] || state reboot-needed "$now"
+  since=$(get reboot-needed "$now"); lastr=$(get last_reboot_notify 0)
+  if (( now - since >= 86400 && now - lastr >= 86400 )); then
+    notify low "Reboot pending" "Kernel $newest is installed (running $(uname -r)) since $(( (now - since) / 86400 )) day(s). Reboot when convenient."
+    state last_reboot_notify "$now"
+  fi
+else rm -f "$STATE/reboot-needed"; fi
+
+pgrep -x pacman >/dev/null && wait_for "another pacman is running"
+
+list=${XYNO_AUTO_FAKE-$(checkupdates 2>/dev/null)}
+if [[ -z $list ]]; then state last_result "up to date"; state last_ok "$now"; state last_attempt "$now"; state pending 0; exit 0; fi
+n=$(grep -c . <<<"$list"); state pending "$n"
+[[ -z $(get last_ok) ]] && state last_ok "$now"   # first run on this machine: the clock starts now
+
+pgrep -x reaper >/dev/null && wait_for "a Steam game is running"
+
+kernel_pending=$(awk '$1 ~ /^linux(-cachyos[a-z0-9-]*|-lts|-zen|-hardened)?$/ {print $1}' <<<"$list" | paste -sd,)
+if [[ -n $kernel_pending && -z ${XYNO_AUTO_DRY-} ]]; then
+  # keep the boot images that work today as a "previous kernel" entry
+  for f in /boot/EFI/Linux/*.efi; do
+    case $f in *-prev.efi|*fallback*) continue ;; esac
+    [[ -f $f ]] || continue
+    avail=$(df -m --output=avail /boot | tail -1)
+    if (( avail > $(du -m "$f" | cut -f1) + 40 )); then cp -f "$f" "${f%.efi}-prev.efi.new" && mv -f "${f%.efi}-prev.efi.new" "${f%.efi}-prev.efi"; log "kept $(basename "$f") as $(basename "${f%.efi}")-prev.efi"; else log "not enough room on /boot to keep a previous-kernel image"; fi
+  done
 fi
-stale Hyprland && as_user notify-send -a xyno-update "Hyprland updated" "Installed. Log out and back in to apply it."
-[[ -n $held ]] && as_user notify-send -a xyno-update -u normal "Kernel update waiting" "$held"$'\n'"Run: xyno-update apply, then reboot."
+
+log "installing $n update(s)${kernel_pending:+ including kernel: $kernel_pending}"
+if [[ -n ${XYNO_AUTO_DRY-} ]]; then echo "dry run: would run pacman -Syu --noconfirm"; ok=0
+else
+  ok=1
+  for attempt in 1 2 3; do
+    if pacman -Syu --noconfirm >> "$LOG" 2>&1; then ok=0; break; fi
+    log "pacman attempt $attempt failed"; sleep 90
+  done
+fi
+if (( ok != 0 )); then
+  why=$(grep -E '^(error|:: .*conflict|warning: .*(corrupted|invalid))' "$LOG" | tail -3 | cut -c1-160 | paste -sd';')
+  state last_result "failed: ${why:-see $LOG}"; state last_attempt "$now"
+  notify critical "Update FAILED" "${why:-see /var/log/xyno-update.log}. Retrying in an hour."
+  exit 1
+fi
+
+# --- success: apply and report ---
+applied=(); needs=()
+restart_noctalia() {   # returns 0 only if the NEW process is still alive a few seconds later
+  local np wl sig; local -a envs=()
+  np=$(pgrep -u 1000 -x noctalia | head -1)
+  if [[ -n $np ]]; then   # the running noctalia has the complete environment (display, Hyprland signature, GL, cursor)
+    mapfile -d '' envs < <(grep -z -E '^(WAYLAND_DISPLAY|HYPRLAND_INSTANCE_SIGNATURE|XCURSOR_[A-Z]*|XDG_[A-Z_]*|__GL_[A-Z_]*|QT_[A-Z_]*|GDK_[A-Z_]*|MOZ_[A-Z_]*|ELECTRON_[A-Z_]*|GTK_[A-Z_]*|CLUTTER_[A-Z_]*)=' "/proc/$np/environ")
+  fi
+  if ! printf '%s\0' "${envs[@]}" | grep -z -q '^WAYLAND_DISPLAY='; then   # fallback: Hyprland's own environment lacks the display
+    wl=""; sig=""
+    for w in "$RT"/wayland-[0-9]*; do [[ $w == *.lock ]] || { wl=${w##*/}; break; }; done
+    for d in "$RT"/hypr/*/; do sig=$(basename "$d"); break; done
+    envs+=("WAYLAND_DISPLAY=$wl" "HYPRLAND_INSTANCE_SIGNATURE=$sig" XDG_CURRENT_DESKTOP=Hyprland XDG_SESSION_TYPE=wayland)
+  fi
+  [[ -n $np ]] && { pkill -u 1000 -x noctalia; sleep 1; }
+  as_user env "${envs[@]}" setsid -f noctalia >/dev/null 2>&1
+  sleep 6
+  pgrep -u 1000 -x noctalia >/dev/null
+}
+if stale noctalia; then
+  if [[ -n ${XYNO_AUTO_DRY-} ]]; then applied+=("noctalia would be restarted")
+  elif restart_noctalia; then applied+=("noctalia restarted")
+  else needs+=("noctalia did NOT come back: run noctalia (see $LOG)"); log "noctalia restart FAILED"; fi
+fi
+stale Hyprland && needs+=("log out and back in for Hyprland")
+newest=$(ls /usr/lib/modules 2>/dev/null | sort -V | tail -1)
+if [[ -n $newest && $newest != "$(uname -r)" ]]; then needs+=("reboot when convenient for the new kernel ($newest)"); [[ -f $STATE/reboot-needed ]] || state reboot-needed "$now"; fi
+aur=$(timeout 90 runuser -u "$U" -- yay -Qua 2>/dev/null | wc -l)
+
+keys=$(awk -v re='^(linux[a-z0-9-]*|hyprland|noctalia|mesa|nvidia[a-z0-9-]*|systemd|firefox|chromium|pipewire)$' '$1 ~ re {printf "%s %s; ", $1, $4}' <<<"$list" | cut -c1-200)
+body="${n} update(s) installed. ${keys}"
+[[ ${#applied[@]} -gt 0 ]] && body+=$'\n'"Applied: $(IFS=,; echo "${applied[*]}")"
+[[ ${#needs[@]} -gt 0 ]]   && body+=$'\n'"Pending: $(IFS=';'; echo "${needs[*]}")"
+(( aur > 0 )) && body+=$'\n'"AUR: ${aur} update(s) available (not automated: run yay -Sua)"
+log "done: $body"; state last_result "installed $n"; state last_ok "$now"; state last_attempt "$now"; state pending 0; state last_summary "$body"
+notify normal "Updates installed" "$body"
 exit 0

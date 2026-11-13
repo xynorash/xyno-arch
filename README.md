@@ -133,16 +133,22 @@ straight out of `hyprland.lua`, so it can't go stale.
 
 ## Updates
 
-Hyprland and noctalia are kept current with `xyno-update` (a full upgrade, never a partial one):
+Updates install themselves; you are told afterwards. `xyno-update-auto.timer` (system, hourly and 10 minutes after boot) runs
+`xyno-update-auto`:
 
-- `xyno-update status` shows whether the running Hyprland/noctalia match the installed packages.
-- `xyno-update check` lists pending updates (`checkupdates`, no root); `--notify` sends a desktop notification
-  when Hyprland, noctalia or the kernel/boot stack have one. A daily user timer runs it:
-  `systemctl --user enable --now xyno-update-check.timer`.
-- `xyno-update apply` runs `sudo pacman -Syu`, restarts noctalia, and says whether you must log out (Hyprland
-  only takes effect after a new login) or reboot (kernel). Hyprland/noctalia updates are the exception: `xyno-update-auto.timer` (system, hourly) installs them right away with a
-  full upgrade, restarts noctalia, and tells you to re-login for Hyprland. It skips (and the user timer notifies you)
-  when a kernel/boot-stack update is pending or a Steam game is running. Disable: `sudo systemctl disable --now xyno-update-auto.timer`.
+- It installs **every** pending update (repositories, system, kernel, firmware) with a full `pacman -Syu`, no questions asked
+  (a partial upgrade is unsupported on Arch). It only waits while a Steam game or another pacman is running and retries at the
+  next run.
+- **Applied right away:** noctalia is restarted (from the running process's own environment, and checked that the new process
+  stays alive). Hyprland takes effect at the next login. A new kernel needs a reboot: **it never reboots by itself**, the
+  notification says so and a reminder repeats once a day until you do.
+- One notification per run: what was installed, what was applied, what is pending. A failure is reported as a failure and retried.
+- **It cannot go quiet:** every run records why it did or did not act (`/var/lib/xyno-update/`, log in `/var/log/xyno-update.log`).
+  If updates have been pending for more than 36 hours you get a critical notification with the last reason.
+- Before a kernel update the working boot image is kept as `<name>-prev.efi`; Limine has a "previous kernel" entry for it.
+- AUR packages are **not** automated (they build unreviewed code and would need a passwordless root path); the notification
+  tells you how many are waiting: run `yay -Sua`.
+- `xyno-update status` shows the last run; `xyno-update apply` runs the updater right now.
 
 ## Laptop
 

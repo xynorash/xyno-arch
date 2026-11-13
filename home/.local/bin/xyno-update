@@ -4,7 +4,7 @@
 #   xyno-update status           running vs installed Hyprland and noctalia
 #   xyno-update check [--notify] list pending updates (checkupdates, no root); --notify sends a desktop
 #                                notification when Hyprland/noctalia or the kernel/boot stack have an update
-#   xyno-update apply            full upgrade (sudo), restart noctalia, say what still needs a re-login or reboot
+#   xyno-update apply            run the automatic updater now (sudo); it normally runs by itself every hour
 #
 # Test hook: XYNO_UPDATE_FAKE='hyprland 0.57.1-1 -> 0.57.2-1' pretends those updates are pending.
 set -u
@@ -18,6 +18,12 @@ stale()   { local p; p=$(pgrep -u "$USER" -x "$1" | head -1) || true; [[ -n $p ]
 ver()     { pacman -Q "$1" 2>/dev/null | awk '{print $2}'; }
 
 status() {
+  local d=/var/lib/xyno-update
+  if [[ -r $d/last_result ]]; then
+    echo "auto-update: $(cat $d/last_result)   (last success $(date -d @"$(cat $d/last_ok 2>/dev/null || echo 0)" '+%F %T' 2>/dev/null), pending $(cat $d/pending 2>/dev/null || echo ?))"
+    [[ -r $d/last_summary ]] && sed 's/^/  /' "$d/last_summary"
+    [[ -e $d/reboot-needed ]] && echo "  REBOOT pending for a new kernel (running $(uname -r))"
+  else echo "auto-update: no run recorded yet (systemctl status xyno-update-auto.timer)"; fi
   echo "hyprland  installed $(ver hyprland)   $(stale Hyprland && echo 'RUNNING AN OLDER BUILD: log out and back in to apply' || echo 'running build matches')"
   echo "noctalia  installed $(ver noctalia)   $(stale noctalia && echo 'RUNNING AN OLDER BUILD: run xyno-update apply' || echo 'running build matches')"
 }
